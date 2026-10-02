@@ -1,0 +1,40 @@
+# ==============================================================================
+# SentinelWatch - Inner Git Ignore Configuration
+# ==============================================================================
+
+# --- Python & Backend ---
+backend/venv/
+venv/
+env/
+ENV/
+__pycache__/
+*.py[cod]
+*.so
+.pytest_cache/
+*.db
+*.sqlite
+*.sqlite3
+backend/sentinelwatch.db
+.env
+
+# --- Flutter & Mobile ---
+mobile/.dart_tool/
+mobile/.flutter-plugins
+mobile/.flutter-plugins-dependencies
+mobile/.packages
+mobile/build/
+mobile/android/.gradle/
+mobile/android/local.properties
+mobile/android/app/build/
+
+# Binaries
+*.apk
+*.aab
+app-release.apk
+
+# --- OS & IDE artifacts ---
+.DS_Store
+Thumbs.db
+.vscode/
+.idea/
+.gemini/

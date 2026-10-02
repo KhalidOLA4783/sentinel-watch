@@ -1,0 +1,1183 @@
+<!DOCTYPE html>
+<html lang="fr" class="dark">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>SentinelWatch — Tour de Contrôle Sécurité & Audits Entreprise</title>
+  <script src="https://cdn.tailwindcss.com"></script>
+  <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+  <script>
+    tailwind.config = {
+      darkMode: 'class',
+      theme: {
+        extend: {
+          colors: {
+            soc: {
+              bg: '#090d16',
+              card: '#0f172a',
+              border: '#1e293b',
+              accent: '#38bdf8',
+              danger: '#ef4444',
+              warning: '#f59e0b',
+              success: '#10b981'
+            }
+          }
+        }
+      }
+    }
+  </script>
+  <style>
+    @keyframes pulse-fast {
+      0%, 100% { opacity: 1; }
+      50% { opacity: 0.4; }
+    }
+    .pulse-danger {
+      animation: pulse-fast 1s cubic-bezier(0.4, 0, 0.6, 1) infinite;
+    }
+    ::-webkit-scrollbar {
+      width: 6px;
+      height: 6px;
+    }
+    ::-webkit-scrollbar-track {
+      background: #0f172a;
+    }
+    ::-webkit-scrollbar-thumb {
+      background: #334155;
+      border-radius: 3px;
+    }
+  </style>
+</head>
+<body class="bg-soc-bg text-slate-100 min-h-screen font-sans antialiased selection:bg-cyan-500 selection:text-black">
+
+  <!-- TOP HEADER / SOC NAVBAR -->
+  <header class="h-16 border-b border-soc-border bg-slate-950/80 backdrop-blur sticky top-0 z-50 px-6 flex items-center justify-between">
+    <div class="flex items-center space-x-3">
+      <div class="w-9 h-9 rounded-lg bg-cyan-500/10 border border-cyan-500/30 flex items-center justify-center text-cyan-400 text-lg shadow-sm shadow-cyan-500/20">
+        <i class="fa-solid fa-shield-halved"></i>
+      </div>
+      <div>
+        <div class="flex items-center space-x-2">
+          <h1 class="text-xl font-bold tracking-wide text-white">Sentinel<span class="text-cyan-400">Watch</span></h1>
+          <span class="text-xs font-semibold px-2 py-0.5 rounded bg-cyan-950 text-cyan-400 border border-cyan-800">ENTREPRISE v0.3</span>
+        </div>
+        <p class="text-xs text-slate-400">Supervision SOC, Audit Réel des Postes & Boîte à Outils Forensic</p>
+      </div>
+    </div>
+
+    <!-- Navigation Tabs -->
+    <div class="flex items-center space-x-2 bg-slate-900 border border-slate-800 p-1 rounded-xl">
+      <button id="nav-btn-soc" onclick="switchView('soc')" class="px-3.5 py-1.5 rounded-lg text-xs font-bold transition flex items-center space-x-2 bg-cyan-950 text-cyan-400 border border-cyan-800 shadow">
+        <i class="fa-solid fa-tower-broadcast"></i>
+        <span>Supervision Réseau (SOC)</span>
+      </button>
+      <button id="nav-btn-audits" onclick="switchView('audits')" class="px-3.5 py-1.5 rounded-lg text-xs font-bold transition flex items-center space-x-2 text-slate-400 hover:text-white">
+        <i class="fa-solid fa-clipboard-check text-emerald-400"></i>
+        <span>Audits Postes Entreprise</span>
+        <span id="nav-audits-count" class="px-1.5 py-0.2 rounded-full bg-slate-800 text-[10px] text-slate-300 font-mono">0</span>
+      </button>
+      <button id="nav-btn-toolkit" onclick="switchView('toolkit')" class="px-3.5 py-1.5 rounded-lg text-xs font-bold transition flex items-center space-x-2 text-slate-400 hover:text-white">
+        <i class="fa-solid fa-toolbox text-indigo-400"></i>
+        <span>Boîte à Outils & VirusTotal</span>
+      </button>
+    </div>
+
+    <!-- System Status Indicator -->
+    <div class="flex items-center space-x-4">
+      <div class="flex items-center space-x-2 bg-slate-900 border border-slate-800 rounded-full px-4 py-1.5 text-xs">
+        <span class="w-2.5 h-2.5 rounded-full bg-emerald-400 animate-ping"></span>
+        <span class="text-slate-300 font-medium">Système Opérationnel</span>
+        <span class="text-slate-500">|</span>
+        <span id="last-sync-time" class="text-cyan-400 font-mono">Syncing...</span>
+      </div>
+      <a href="/docs" target="_blank" class="text-xs text-slate-400 hover:text-cyan-400 flex items-center space-x-1.5 transition">
+        <i class="fa-solid fa-book-open"></i>
+        <span>API</span>
+      </a>
+    </div>
+  </header>
+
+  <!-- MAIN DASHBOARD CONTENT -->
+  <main class="p-6 max-w-[1700px] mx-auto space-y-6">
+
+    <!-- ==================================================================== -->
+    <!-- VIEW 1: SUPERVISION EN TEMPS RÉEL (SOC)                               -->
+    <!-- ==================================================================== -->
+    <div id="view-soc" class="space-y-6">
+
+      <!-- KPI STATS CARDS -->
+      <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-5">
+        
+        <!-- Metric 1: Total Logs -->
+        <div class="bg-soc-card border border-soc-border rounded-xl p-5 shadow-lg relative overflow-hidden">
+          <div class="flex items-center justify-between">
+            <span class="text-xs font-semibold uppercase tracking-wider text-slate-400">Logs Ingestion</span>
+            <div class="w-8 h-8 rounded-lg bg-blue-500/10 text-blue-400 flex items-center justify-center">
+              <i class="fa-solid fa-server"></i>
+            </div>
+          </div>
+          <div class="mt-3 flex items-baseline space-x-2">
+            <span id="stat-total-logs" class="text-3xl font-extrabold text-white font-mono">0</span>
+            <span class="text-xs text-slate-400">événements</span>
+          </div>
+          <div class="mt-2 text-xs text-slate-500 flex items-center space-x-1">
+            <i class="fa-solid fa-bolt text-cyan-400"></i>
+            <span id="stat-recent-activity">0</span> requêtes récentes
+          </div>
+        </div>
+
+        <!-- Metric 2: Active Threats -->
+        <div class="bg-soc-card border border-soc-border rounded-xl p-5 shadow-lg relative overflow-hidden" id="card-threats">
+          <div class="flex items-center justify-between">
+            <span class="text-xs font-semibold uppercase tracking-wider text-red-400">Alertes Sécurité</span>
+            <div class="w-8 h-8 rounded-lg bg-red-500/10 text-red-400 flex items-center justify-center">
+              <i class="fa-solid fa-triangle-exclamation"></i>
+            </div>
+          </div>
+          <div class="mt-3 flex items-baseline space-x-2">
+            <span id="stat-active-alerts" class="text-3xl font-extrabold text-red-400 font-mono">0</span>
+            <span class="text-xs text-red-300/80">actives non résolues</span>
+          </div>
+          <div class="mt-2 text-xs text-slate-400 flex items-center space-x-2">
+            <span id="stat-critical-count" class="px-2 py-0.5 rounded text-[10px] font-bold bg-slate-800 text-slate-300">0 CRITICAL</span>
+          </div>
+        </div>
+
+        <!-- Metric 3: Failed Logins -->
+        <div class="bg-soc-card border border-soc-border rounded-xl p-5 shadow-lg relative overflow-hidden">
+          <div class="flex items-center justify-between">
+            <span class="text-xs font-semibold uppercase tracking-wider text-slate-400">Échecs d'Auth (401/403)</span>
+            <div class="w-8 h-8 rounded-lg bg-amber-500/10 text-amber-400 flex items-center justify-center">
+              <i class="fa-solid fa-lock"></i>
+            </div>
+          </div>
+          <div class="mt-3 flex items-baseline space-x-2">
+            <span id="stat-failed-auth" class="text-3xl font-extrabold text-amber-400 font-mono">0</span>
+            <span class="text-xs text-slate-400">rejets</span>
+          </div>
+          <div class="mt-2 text-xs text-slate-500">
+            Ratio d'anomalies d'accès : <span id="stat-auth-ratio" class="text-amber-400 font-semibold">0%</span>
+          </div>
+        </div>
+
+        <!-- Metric 4: Blacklisted IPs -->
+        <div class="bg-soc-card border border-soc-border rounded-xl p-5 shadow-lg relative overflow-hidden">
+          <div class="flex items-center justify-between">
+            <span class="text-xs font-semibold uppercase tracking-wider text-slate-400">IPs Neutralisées (Ban)</span>
+            <div class="w-8 h-8 rounded-lg bg-purple-500/10 text-purple-400 flex items-center justify-center">
+              <i class="fa-solid fa-ban"></i>
+            </div>
+          </div>
+          <div class="mt-3 flex items-baseline space-x-2">
+            <span id="stat-blacklisted-ips" class="text-3xl font-extrabold text-purple-400 font-mono">0</span>
+            <span class="text-xs text-slate-400">adresses bloquées</span>
+          </div>
+          <div class="mt-2 text-xs text-slate-500">
+            Pare-feu applicatif : <span class="text-emerald-400 font-semibold">Actif</span>
+          </div>
+        </div>
+
+      </div>
+
+      <!-- MAIN SPLIT: LOGS TABLE & ALERTS FEED -->
+      <div class="grid grid-cols-1 lg:grid-cols-3 gap-6">
+
+        <!-- Left 2 Cols: Live Logs Stream + Real-Time Chart -->
+        <div class="lg:col-span-2 space-y-6">
+
+          <!-- Real-Time Activity Chart -->
+          <div class="bg-soc-card border border-soc-border rounded-xl p-5 shadow-lg">
+            <div class="flex items-center justify-between pb-3 border-b border-soc-border mb-4">
+              <div class="flex items-center space-x-2">
+                <i class="fa-solid fa-chart-line text-cyan-400"></i>
+                <h2 class="text-sm font-bold uppercase tracking-wider text-slate-200">Activité Réseau & Détection en Direct</h2>
+              </div>
+              <div class="flex items-center space-x-4 text-xs">
+                <span class="flex items-center space-x-1"><span class="w-2.5 h-2.5 rounded bg-cyan-400"></span><span class="text-slate-400">Trafic Normal</span></span>
+                <span class="flex items-center space-x-1"><span class="w-2.5 h-2.5 rounded bg-red-500"></span><span class="text-slate-400">Anomalies / 4xx / 5xx</span></span>
+              </div>
+            </div>
+            <div class="h-48 w-full">
+              <canvas id="trafficChart"></canvas>
+            </div>
+          </div>
+
+          <!-- Live Event Logs Table -->
+          <div class="bg-soc-card border border-soc-border rounded-xl shadow-lg overflow-hidden">
+            <div class="p-4 border-b border-soc-border flex items-center justify-between">
+              <div class="flex items-center space-x-2">
+                <i class="fa-solid fa-list-check text-slate-400"></i>
+                <h2 class="text-sm font-bold uppercase tracking-wider text-slate-200">Flux d'Événements Récents (Access Logs)</h2>
+              </div>
+              <span id="log-count-tag" class="text-xs px-2.5 py-0.5 rounded-full bg-slate-800 text-slate-300 font-mono">0 affichés</span>
+            </div>
+            
+            <div class="overflow-x-auto max-h-[460px] overflow-y-auto">
+              <table class="w-full text-left border-collapse text-xs">
+                <thead class="bg-slate-950/60 text-slate-400 sticky top-0 border-b border-soc-border font-semibold">
+                  <tr>
+                    <th class="py-2.5 px-3">Date / Heure</th>
+                    <th class="py-2.5 px-3">Utilisateur</th>
+                    <th class="py-2.5 px-3">IP / Localisation</th>
+                    <th class="py-2.5 px-3">Méthode / Endpoint</th>
+                    <th class="py-2.5 px-3">Statut</th>
+                    <th class="py-2.5 px-3">Score IA / Flag</th>
+                  </tr>
+                </thead>
+                <tbody id="logs-tbody" class="divide-y divide-soc-border font-mono">
+                  <tr>
+                    <td colspan="6" class="text-center py-8 text-slate-500">En attente de connexion au serveur SentinelWatch...</td>
+                  </tr>
+                </tbody>
+              </table>
+            </div>
+          </div>
+
+        </div>
+
+        <!-- Right 1 Col: Live Alerts Stack & Actions -->
+        <div class="space-y-6">
+
+          <!-- Security Alerts Feed -->
+          <div class="bg-soc-card border border-soc-border rounded-xl shadow-lg p-5">
+            <div class="flex items-center justify-between pb-3 border-b border-soc-border mb-4">
+              <div class="flex items-center space-x-2">
+                <i class="fa-solid fa-bell text-red-400"></i>
+                <h2 class="text-sm font-bold uppercase tracking-wider text-white">Alertes de Sécurité Qualifiées</h2>
+              </div>
+              <span id="alerts-badge-count" class="text-xs px-2 py-0.5 rounded-full bg-red-950 text-red-300 border border-red-800 font-bold">0</span>
+            </div>
+
+            <!-- Alerts Container -->
+            <div id="alerts-list" class="space-y-3.5 max-h-[580px] overflow-y-auto pr-1">
+              <div class="text-center py-10 text-slate-500 text-xs">
+                <i class="fa-solid fa-shield-cat text-2xl text-slate-600 mb-2 block"></i>
+                Aucun incident non résolu actuellement.
+              </div>
+            </div>
+          </div>
+
+          <!-- Blacklisted IPs Card -->
+          <div class="bg-soc-card border border-soc-border rounded-xl shadow-lg p-5">
+            <div class="flex items-center justify-between pb-3 border-b border-soc-border mb-3">
+              <div class="flex items-center space-x-2">
+                <i class="fa-solid fa-shield-virus text-purple-400"></i>
+                <h2 class="text-sm font-semibold uppercase tracking-wider text-slate-200">Liste Noire (IPs Bannies)</h2>
+              </div>
+            </div>
+            <div id="blacklist-container" class="space-y-2 max-h-[220px] overflow-y-auto text-xs">
+              <div class="text-slate-500 py-3 text-center">Aucune IP bannie pour l'instant.</div>
+            </div>
+          </div>
+
+        </div>
+
+      </div>
+
+    </div>
+
+    <!-- ==================================================================== -->
+    <!-- VIEW 2: POSTURE & AUDITS DE SÉCURITÉ ENTREPRISE                      -->
+    <!-- ==================================================================== -->
+    <div id="view-audits" class="space-y-6 hidden">
+
+      <!-- Enterprise Audits Header Banner -->
+      <div class="bg-gradient-to-r from-slate-900 via-slate-800 to-slate-900 border border-soc-border rounded-2xl p-6 shadow-xl flex flex-col md:flex-row items-start md:items-center justify-between gap-4">
+        <div>
+          <div class="flex items-center space-x-3">
+            <div class="w-10 h-10 rounded-xl bg-emerald-500/20 text-emerald-400 border border-emerald-500/30 flex items-center justify-center text-xl">
+              <i class="fa-solid fa-building-shield"></i>
+            </div>
+            <div>
+              <h2 class="text-lg font-bold text-white tracking-wide">Bilan de Santé & Audit Réel du Parc Entreprise</h2>
+              <p class="text-xs text-slate-400">Vérification de la posture de sécurité des postes et serveurs sans simulation : failles réelles et solutions étape par étape.</p>
+            </div>
+          </div>
+        </div>
+
+        <div class="bg-slate-950/80 border border-slate-800 rounded-xl p-3 flex items-center space-x-4 text-xs font-mono">
+          <div>
+            <span class="text-slate-500 block text-[10px]">COMMANDE POUR AUDITER UN PC</span>
+            <code class="text-cyan-400 select-all">.\sentinel_audit.ps1 -ApiUrl "http://127.0.0.1:8000/api/v1/audits"</code>
+          </div>
+        </div>
+      </div>
+
+      <!-- Audit KPI Metrics -->
+      <div class="grid grid-cols-1 md:grid-cols-3 gap-5">
+        <div class="bg-soc-card border border-soc-border rounded-xl p-5 shadow">
+          <span class="text-xs font-semibold uppercase text-slate-400">Machines Auditées</span>
+          <div class="mt-2 flex items-baseline space-x-2">
+            <span id="audit-total-machines" class="text-3xl font-extrabold text-white font-mono">0</span>
+            <span class="text-xs text-slate-400">postes / serveurs</span>
+          </div>
+        </div>
+
+        <div class="bg-soc-card border border-soc-border rounded-xl p-5 shadow">
+          <span class="text-xs font-semibold uppercase text-slate-400">Score Moyen du Parc</span>
+          <div class="mt-2 flex items-baseline space-x-2">
+            <span id="audit-avg-score" class="text-3xl font-extrabold text-emerald-400 font-mono">--</span>
+            <span class="text-xs text-slate-400">/ 100</span>
+          </div>
+        </div>
+
+        <div class="bg-soc-card border border-soc-border rounded-xl p-5 shadow">
+          <span class="text-xs font-semibold uppercase text-slate-400">Failles Critiques Ouvertes</span>
+          <div class="mt-2 flex items-baseline space-x-2">
+            <span id="audit-total-flaws" class="text-3xl font-extrabold text-red-400 font-mono">0</span>
+            <span class="text-xs text-slate-400">vulnérabilités à corriger</span>
+          </div>
+        </div>
+      </div>
+
+      <!-- List of Machine Audits with Findings & Solutions -->
+      <div class="bg-soc-card border border-soc-border rounded-xl shadow-lg p-6">
+        <div class="flex items-center justify-between pb-4 border-b border-soc-border mb-6">
+          <div class="flex items-center space-x-2">
+            <i class="fa-solid fa-laptop-code text-cyan-400"></i>
+            <h3 class="text-sm font-bold uppercase tracking-wider text-white">Inventaire des Postes et Recommandations Correctives</h3>
+          </div>
+          <button onclick="fetchAudits()" class="px-3 py-1 bg-slate-800 hover:bg-slate-700 text-xs rounded-lg transition text-slate-300 flex items-center space-x-1.5">
+            <i class="fa-solid fa-arrows-rotate"></i>
+            <span>Actualiser</span>
+          </button>
+        </div>
+
+        <div id="audits-list-container" class="space-y-6">
+          <div class="text-center py-12 text-slate-500 text-xs">
+            <i class="fa-solid fa-spinner fa-spin text-2xl mb-3 text-cyan-500 block"></i>
+            Chargement des audits en cours...
+          </div>
+        </div>
+      </div>
+
+    </div>
+
+    <!-- ==================================================================== -->
+    <!-- VIEW 3: BOÎTE À OUTILS FORENSIC, VIRUSTOTAL & CONTRÔLES RAPIDES       -->
+    <!-- ==================================================================== -->
+    <div id="view-toolkit" class="space-y-6 hidden">
+
+      <!-- Header Banner -->
+      <div class="bg-gradient-to-r from-indigo-950 via-slate-900 to-slate-950 border border-indigo-900/50 rounded-2xl p-6 shadow-xl flex flex-col md:flex-row items-start md:items-center justify-between gap-4">
+        <div class="flex items-center space-x-3">
+          <div class="w-10 h-10 rounded-xl bg-indigo-500/20 text-indigo-400 border border-indigo-500/30 flex items-center justify-center text-xl">
+            <i class="fa-solid fa-toolbox"></i>
+          </div>
+          <div>
+            <h2 class="text-lg font-bold text-white tracking-wide">Trousse d'Investigation Forensic & Réponse aux Incidents</h2>
+            <p class="text-xs text-slate-400">Analyse de hash SHA-256 VirusTotal, vérifications rapides d'intégrité Windows et outils gratuits recommandés.</p>
+          </div>
+        </div>
+        <div class="flex items-center space-x-2">
+          <span class="text-xs px-2.5 py-1 rounded bg-indigo-950 text-indigo-300 border border-indigo-800 font-mono">
+            <i class="fa-solid fa-shield-virus mr-1"></i>Triage Rapide
+          </span>
+        </div>
+      </div>
+
+      <!-- SECTION 1: VIRUSTOTAL FILE & HASH SCANNER -->
+      <div class="bg-soc-card border border-soc-border rounded-xl shadow-lg p-6">
+        <div class="flex items-center space-x-2 pb-3 border-b border-soc-border mb-5">
+          <i class="fa-solid fa-virus-slash text-indigo-400"></i>
+          <h3 class="text-sm font-bold uppercase tracking-wider text-white">Analyseur Express VirusTotal (Calcul SHA-256 en Local)</h3>
+        </div>
+
+        <div class="grid grid-cols-1 lg:grid-cols-2 gap-6">
+          
+          <!-- File Drop Zone for SHA256 Calculation -->
+          <div class="border-2 border-dashed border-slate-700 hover:border-indigo-500 rounded-xl p-6 text-center transition bg-slate-950/50 flex flex-col items-center justify-center space-y-3 cursor-pointer" id="drop-zone" onclick="document.getElementById('file-input').click()">
+            <input type="file" id="file-input" class="hidden" onchange="handleFileSelect(event)">
+            <div class="w-12 h-12 rounded-full bg-indigo-500/10 text-indigo-400 flex items-center justify-center text-xl">
+              <i class="fa-solid fa-file-arrow-up"></i>
+            </div>
+            <div>
+              <span class="text-sm font-bold text-white block">Glissez-déposez un fichier suspect ici</span>
+              <span class="text-xs text-slate-400">ou cliquez pour sélectionner un exécutable (.exe, .dll, .bat, etc.)</span>
+            </div>
+            <p class="text-[11px] text-slate-500">
+              <i class="fa-solid fa-lock text-emerald-400 mr-1"></i>Le fichier ne quitte pas votre machine : l'empreinte SHA-256 est calculée directement dans votre navigateur.
+            </p>
+          </div>
+
+          <!-- File Hash & VirusTotal Results -->
+          <div class="bg-slate-950 border border-slate-800 rounded-xl p-5 flex flex-col justify-between">
+            <div class="space-y-3">
+              <span class="text-xs font-semibold uppercase text-slate-400 block">Résultat de l'analyse d'empreinte</span>
+              
+              <div id="hash-result-box" class="space-y-2">
+                <div class="text-xs text-slate-500 py-3 text-center">
+                  Aucun fichier sélectionné. Glissez un fichier à gauche ou collez un hash ci-dessous.
+                </div>
+              </div>
+            </div>
+
+            <!-- Manual Hash Search -->
+            <div class="mt-4 pt-4 border-t border-slate-800">
+              <label class="text-[11px] text-slate-400 block mb-1">Ou recherchez directement un Hash (SHA-256 / MD5 / SHA-1) :</label>
+              <div class="flex items-center space-x-2">
+                <input type="text" id="manual-hash-input" placeholder="Ex: e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855" class="flex-1 bg-slate-900 border border-slate-700 rounded-lg px-3 py-1.5 text-xs text-slate-200 font-mono focus:outline-none focus:border-indigo-500">
+                <button onclick="queryManualHash()" class="px-4 py-1.5 bg-indigo-600 hover:bg-indigo-500 text-white rounded-lg text-xs font-bold transition flex items-center space-x-1.5 shadow">
+                  <i class="fa-solid fa-magnifying-glass"></i>
+                  <span>VirusTotal</span>
+                </button>
+              </div>
+            </div>
+
+          </div>
+
+        </div>
+      </div>
+
+      <!-- SECTION 2: CONTRÔLES RAPIDES SYSTÈME (FICHES D'ACTION & COMMANDES) -->
+      <div class="bg-soc-card border border-soc-border rounded-xl shadow-lg p-6">
+        <div class="flex items-center justify-between pb-3 border-b border-soc-border mb-5">
+          <div class="flex items-center space-x-2">
+            <i class="fa-solid fa-terminal text-cyan-400"></i>
+            <h3 class="text-sm font-bold uppercase tracking-wider text-white">Contrôles Rapides Système (Vérifications & Remédiations)</h3>
+          </div>
+          <span class="text-xs text-slate-400">Commandes prêtes à copier pour Windows</span>
+        </div>
+
+        <div class="grid grid-cols-1 md:grid-cols-2 gap-5 text-xs">
+          
+          <!-- Card A: Fichier Hosts -->
+          <div class="bg-slate-950 border border-slate-800 rounded-xl p-4 space-y-3">
+            <div class="flex items-center justify-between">
+              <div class="flex items-center space-x-2">
+                <i class="fa-solid fa-network-wired text-amber-400"></i>
+                <span class="font-bold text-white text-xs">1. Fichier HOSTS (Détournement DNS)</span>
+              </div>
+              <span class="px-2 py-0.5 rounded bg-amber-950 text-amber-300 border border-amber-800 font-mono text-[10px]">C:\Windows\System32\drivers\etc\hosts</span>
+            </div>
+            <p class="text-slate-400 leading-relaxed">
+              Les malwares modifient souvent ce fichier pour rediriger Google/banques vers des faux sites ou bloquer l'accès aux serveurs de mise à jour des antivirus.
+            </p>
+            <div class="space-y-1.5 font-mono text-[11px]">
+              <div class="bg-slate-900 p-2 rounded flex items-center justify-between border border-slate-800">
+                <code class="text-cyan-400 truncate max-w-[80%]">Get-Content C:\Windows\System32\drivers\etc\hosts</code>
+                <button onclick="navigator.clipboard.writeText('Get-Content C:\\Windows\\System32\\drivers\\etc\\hosts'); alert('Copié !')" class="px-2 py-0.5 rounded bg-slate-800 hover:bg-slate-700 text-slate-300 text-[10px]">
+                  <i class="fa-solid fa-copy mr-1"></i>Lire
+                </button>
+              </div>
+              <div class="bg-slate-900 p-2 rounded flex items-center justify-between border border-slate-800">
+                <code class="text-cyan-400 truncate max-w-[80%]">notepad C:\Windows\System32\drivers\etc\hosts</code>
+                <button onclick="navigator.clipboard.writeText('notepad C:\\Windows\\System32\\drivers\\etc\\hosts'); alert('Copié !')" class="px-2 py-0.5 rounded bg-slate-800 hover:bg-slate-700 text-slate-300 text-[10px]">
+                  <i class="fa-solid fa-copy mr-1"></i>Éditer
+                </button>
+              </div>
+            </div>
+          </div>
+
+          <!-- Card B: Intégrité Système (SFC & DISM) -->
+          <div class="bg-slate-950 border border-slate-800 rounded-xl p-4 space-y-3">
+            <div class="flex items-center justify-between">
+              <div class="flex items-center space-x-2">
+                <i class="fa-solid fa-wrench text-blue-400"></i>
+                <span class="font-bold text-white text-xs">2. Intégrité Système (SFC / DISM)</span>
+              </div>
+              <span class="px-2 py-0.5 rounded bg-blue-950 text-blue-300 border border-blue-800 font-mono text-[10px]">Réparation Windows</span>
+            </div>
+            <p class="text-slate-400 leading-relaxed">
+              Vérifie et restaure automatiquement les fichiers système et DLLs de Windows qui auraient été altérés ou injectés par un logiciel malveillant.
+            </p>
+            <div class="space-y-1.5 font-mono text-[11px]">
+              <div class="bg-slate-900 p-2 rounded flex items-center justify-between border border-slate-800">
+                <code class="text-cyan-400 truncate max-w-[80%]">DISM.exe /Online /Cleanup-image /Restorehealth</code>
+                <button onclick="navigator.clipboard.writeText('DISM.exe /Online /Cleanup-image /Restorehealth'); alert('Copié !')" class="px-2 py-0.5 rounded bg-slate-800 hover:bg-slate-700 text-slate-300 text-[10px]">
+                  <i class="fa-solid fa-copy mr-1"></i>Étape 1
+                </button>
+              </div>
+              <div class="bg-slate-900 p-2 rounded flex items-center justify-between border border-slate-800">
+                <code class="text-cyan-400 truncate max-w-[80%]">sfc /scannow</code>
+                <button onclick="navigator.clipboard.writeText('sfc /scannow'); alert('Copié !')" class="px-2 py-0.5 rounded bg-slate-800 hover:bg-slate-700 text-slate-300 text-[10px]">
+                  <i class="fa-solid fa-copy mr-1"></i>Étape 2
+                </button>
+              </div>
+            </div>
+          </div>
+
+          <!-- Card C: Bureau à Distance (RDP & NLA) -->
+          <div class="bg-slate-950 border border-slate-800 rounded-xl p-4 space-y-3">
+            <div class="flex items-center justify-between">
+              <div class="flex items-center space-x-2">
+                <i class="fa-solid fa-desktop text-red-400"></i>
+                <span class="font-bold text-white text-xs">3. Bureau à Distance (RDP 3389 & NLA)</span>
+              </div>
+              <span class="px-2 py-0.5 rounded bg-red-950 text-red-300 border border-red-800 font-mono text-[10px]">Vecteur #1 Ransomware</span>
+            </div>
+            <p class="text-slate-400 leading-relaxed">
+              Exige impérativement le chiffrement NLA (Network Level Authentication) ou désactive le port RDP pour stopper les attaques par force brute.
+            </p>
+            <div class="space-y-1.5 font-mono text-[11px]">
+              <div class="bg-slate-900 p-2 rounded flex items-center justify-between border border-slate-800">
+                <code class="text-cyan-400 truncate max-w-[80%]">Set-ItemProperty -Path 'HKLM:\System\CurrentControlSet\Control\Terminal Server\WinStations\RDP-Tcp' -Name 'UserAuthentication' -Value 1</code>
+                <button onclick="navigator.clipboard.writeText(`Set-ItemProperty -Path 'HKLM:\\System\\CurrentControlSet\\Control\\Terminal Server\\WinStations\\RDP-Tcp' -Name 'UserAuthentication' -Value 1`); alert('Copié !')" class="px-2 py-0.5 rounded bg-slate-800 hover:bg-slate-700 text-slate-300 text-[10px]">
+                  <i class="fa-solid fa-copy mr-1"></i>Forcer NLA
+                </button>
+              </div>
+              <div class="bg-slate-900 p-2 rounded flex items-center justify-between border border-slate-800">
+                <code class="text-cyan-400 truncate max-w-[80%]">Set-ItemProperty -Path 'HKLM:\System\CurrentControlSet\Control\Terminal Server' -Name 'fDenyTSConnections' -Value 1</code>
+                <button onclick="navigator.clipboard.writeText(`Set-ItemProperty -Path 'HKLM:\\System\\CurrentControlSet\\Control\\Terminal Server' -Name 'fDenyTSConnections' -Value 1`); alert('Copié !')" class="px-2 py-0.5 rounded bg-slate-800 hover:bg-slate-700 text-slate-300 text-[10px]">
+                  <i class="fa-solid fa-copy mr-1"></i>Couper RDP
+                </button>
+              </div>
+            </div>
+          </div>
+
+          <!-- Card D: Historique PowerShell -->
+          <div class="bg-slate-950 border border-slate-800 rounded-xl p-4 space-y-3">
+            <div class="flex items-center justify-between">
+              <div class="flex items-center space-x-2">
+                <i class="fa-solid fa-clock-rotate-left text-purple-400"></i>
+                <span class="font-bold text-white text-xs">4. Historique PowerShell (ConsoleHost)</span>
+              </div>
+              <span class="px-2 py-0.5 rounded bg-purple-950 text-purple-300 border border-purple-800 font-mono text-[10px]">Détection Stagers</span>
+            </div>
+            <p class="text-slate-400 leading-relaxed">
+              Conserve la trace de toutes les commandes tapées : utile pour repérer les scripts furtifs (IEX, DownloadString, Mimikatz, encodages base64).
+            </p>
+            <div class="space-y-1.5 font-mono text-[11px]">
+              <div class="bg-slate-900 p-2 rounded flex items-center justify-between border border-slate-800">
+                <code class="text-cyan-400 truncate max-w-[80%]">notepad (Get-PSReadLineOption).HistorySavePath</code>
+                <button onclick="navigator.clipboard.writeText('notepad (Get-PSReadLineOption).HistorySavePath'); alert('Copié !')" class="px-2 py-0.5 rounded bg-slate-800 hover:bg-slate-700 text-slate-300 text-[10px]">
+                  <i class="fa-solid fa-copy mr-1"></i>Ouvrir
+                </button>
+              </div>
+              <div class="bg-slate-900 p-2 rounded flex items-center justify-between border border-slate-800">
+                <code class="text-cyan-400 truncate max-w-[80%]">Clear-History; Remove-Item (Get-PSReadLineOption).HistorySavePath -ErrorAction SilentlyContinue</code>
+                <button onclick="navigator.clipboard.writeText('Clear-History; Remove-Item (Get-PSReadLineOption).HistorySavePath -ErrorAction SilentlyContinue'); alert('Copié !')" class="px-2 py-0.5 rounded bg-slate-800 hover:bg-slate-700 text-slate-300 text-[10px]">
+                  <i class="fa-solid fa-copy mr-1"></i>Purger
+                </button>
+              </div>
+            </div>
+          </div>
+
+        </div>
+      </div>
+
+      <!-- SECTION 3: LES OUTILS GRATUITS RECOMMANDÉS (SYSINTERNALS & MALWAREBYTES) -->
+      <div class="bg-soc-card border border-soc-border rounded-xl shadow-lg p-6">
+        <div class="flex items-center space-x-2 pb-3 border-b border-soc-border mb-5">
+          <i class="fa-solid fa-download text-emerald-400"></i>
+          <h3 class="text-sm font-bold uppercase tracking-wider text-white">Les 4 Outils Gratuits Recommandés (Triage & Nettoyage d'Urgence)</h3>
+        </div>
+
+        <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-5">
+          
+          <!-- Tool 1: Autoruns -->
+          <div class="bg-slate-950 border border-slate-800 hover:border-slate-700 rounded-xl p-5 flex flex-col justify-between space-y-4">
+            <div>
+              <div class="flex items-center justify-between mb-2">
+                <span class="text-xs font-bold text-white flex items-center space-x-1.5">
+                  <i class="fa-solid fa-play text-cyan-400"></i>
+                  <span>Sysinternals Autoruns</span>
+                </span>
+                <span class="px-1.5 py-0.5 rounded bg-slate-800 text-[10px] text-cyan-300 font-mono">Microsoft</span>
+              </div>
+              <p class="text-xs text-slate-400 leading-relaxed">
+                Affiche la liste exhaustive des programmes démarrant automatiquement : clés de registre Run, tâches planifiées, services, drivers et extensions shell.
+              </p>
+              <div class="mt-2 text-[11px] text-slate-500">
+                <strong class="text-slate-300">Usage :</strong> Détecter où un malware se cache pour persister au redémarrage.
+              </div>
+            </div>
+            <a href="https://learn.microsoft.com/fr-fr/sysinternals/downloads/autoruns" target="_blank" class="w-full py-2 px-3 rounded-lg bg-cyan-950 hover:bg-cyan-900 border border-cyan-800 text-cyan-300 text-xs font-semibold text-center transition flex items-center justify-center space-x-1.5">
+              <i class="fa-solid fa-arrow-up-right-from-square text-[10px]"></i>
+              <span>Télécharger Autoruns</span>
+            </a>
+          </div>
+
+          <!-- Tool 2: Process Explorer -->
+          <div class="bg-slate-950 border border-slate-800 hover:border-slate-700 rounded-xl p-5 flex flex-col justify-between space-y-4">
+            <div>
+              <div class="flex items-center justify-between mb-2">
+                <span class="text-xs font-bold text-white flex items-center space-x-1.5">
+                  <i class="fa-solid fa-microchip text-emerald-400"></i>
+                  <span>Process Explorer</span>
+                </span>
+                <span class="px-1.5 py-0.5 rounded bg-slate-800 text-[10px] text-emerald-300 font-mono">Microsoft</span>
+              </div>
+              <p class="text-xs text-slate-400 leading-relaxed">
+                Le gestionnaire de tâches ultime. Intègre nativement VirusTotal pour vérifier en temps réel le hash de chaque processus en cours d'exécution.
+              </p>
+              <div class="mt-2 text-[11px] text-slate-500">
+                <strong class="text-slate-300">Usage :</strong> Identifier les processus suspects et injectés en mémoire.
+              </div>
+            </div>
+            <a href="https://learn.microsoft.com/fr-fr/sysinternals/downloads/process-explorer" target="_blank" class="w-full py-2 px-3 rounded-lg bg-emerald-950 hover:bg-emerald-900 border border-emerald-800 text-emerald-300 text-xs font-semibold text-center transition flex items-center justify-center space-x-1.5">
+              <i class="fa-solid fa-arrow-up-right-from-square text-[10px]"></i>
+              <span>Télécharger ProcExp</span>
+            </a>
+          </div>
+
+          <!-- Tool 3: TCPView -->
+          <div class="bg-slate-950 border border-slate-800 hover:border-slate-700 rounded-xl p-5 flex flex-col justify-between space-y-4">
+            <div>
+              <div class="flex items-center justify-between mb-2">
+                <span class="text-xs font-bold text-white flex items-center space-x-1.5">
+                  <i class="fa-solid fa-network-wired text-purple-400"></i>
+                  <span>Sysinternals TCPView</span>
+                </span>
+                <span class="px-1.5 py-0.5 rounded bg-slate-800 text-[10px] text-purple-300 font-mono">Microsoft</span>
+              </div>
+              <p class="text-xs text-slate-400 leading-relaxed">
+                Fournit une liste détaillée en temps réel de tous les points de terminaison TCP et UDP, avec résolution DNS et adresses distantes connectées.
+              </p>
+              <div class="mt-2 text-[11px] text-slate-500">
+                <strong class="text-slate-300">Usage :</strong> Débusquer les spywares communicant vers un serveur C2 externe.
+              </div>
+            </div>
+            <a href="https://learn.microsoft.com/fr-fr/sysinternals/downloads/tcpview" target="_blank" class="w-full py-2 px-3 rounded-lg bg-purple-950 hover:bg-purple-900 border border-purple-800 text-purple-300 text-xs font-semibold text-center transition flex items-center justify-center space-x-1.5">
+              <i class="fa-solid fa-arrow-up-right-from-square text-[10px]"></i>
+              <span>Télécharger TCPView</span>
+            </a>
+          </div>
+
+          <!-- Tool 4: Malwarebytes AdwCleaner -->
+          <div class="bg-slate-950 border border-slate-800 hover:border-slate-700 rounded-xl p-5 flex flex-col justify-between space-y-4">
+            <div>
+              <div class="flex items-center justify-between mb-2">
+                <span class="text-xs font-bold text-white flex items-center space-x-1.5">
+                  <i class="fa-solid fa-broom text-amber-400"></i>
+                  <span>AdwCleaner / MBAM</span>
+                </span>
+                <span class="px-1.5 py-0.5 rounded bg-slate-800 text-[10px] text-amber-300 font-mono">Gratuit</span>
+              </div>
+              <p class="text-xs text-slate-400 leading-relaxed">
+                Utilitaire autonome portable (sans installation). Éradique rapidement les adwares, barres d'outils parasites et programmes potentiellement indésirables (PUPs).
+              </p>
+              <div class="mt-2 text-[11px] text-slate-500">
+                <strong class="text-slate-300">Usage :</strong> Nettoyage et désinfection immédiate d'un poste utilisateur infecté.
+              </div>
+            </div>
+            <a href="https://fr.malwarebytes.com/adwcleaner/" target="_blank" class="w-full py-2 px-3 rounded-lg bg-amber-950 hover:bg-amber-900 border border-amber-800 text-amber-300 text-xs font-semibold text-center transition flex items-center justify-center space-x-1.5">
+              <i class="fa-solid fa-arrow-up-right-from-square text-[10px]"></i>
+              <span>Télécharger AdwCleaner</span>
+            </a>
+          </div>
+
+        </div>
+      </div>
+
+    </div>
+
+  </main>
+
+  <!-- JAVASCRIPT LOGIC & REALTIME POLLING -->
+  <script>
+    const host = (window.location.host && window.location.host !== "") ? window.location.host : "127.0.0.1:8000";
+    const API_BASE = "http://" + host + "/api/v1";
+
+    let currentView = 'soc';
+    function switchView(view) {
+      currentView = view;
+      const viewSoc = document.getElementById('view-soc');
+      const viewAudits = document.getElementById('view-audits');
+      const viewToolkit = document.getElementById('view-toolkit');
+      const btnSoc = document.getElementById('nav-btn-soc');
+      const btnAudits = document.getElementById('nav-btn-audits');
+      const btnToolkit = document.getElementById('nav-btn-toolkit');
+
+      viewSoc.classList.add('hidden');
+      viewAudits.classList.add('hidden');
+      viewToolkit.classList.add('hidden');
+
+      btnSoc.className = "px-3.5 py-1.5 rounded-lg text-xs font-bold transition flex items-center space-x-2 text-slate-400 hover:text-white";
+      btnAudits.className = "px-3.5 py-1.5 rounded-lg text-xs font-bold transition flex items-center space-x-2 text-slate-400 hover:text-white";
+      btnToolkit.className = "px-3.5 py-1.5 rounded-lg text-xs font-bold transition flex items-center space-x-2 text-slate-400 hover:text-white";
+
+      if (view === 'soc') {
+        viewSoc.classList.remove('hidden');
+        btnSoc.className = "px-3.5 py-1.5 rounded-lg text-xs font-bold transition flex items-center space-x-2 bg-cyan-950 text-cyan-400 border border-cyan-800 shadow";
+      } else if (view === 'audits') {
+        viewAudits.classList.remove('hidden');
+        btnAudits.className = "px-3.5 py-1.5 rounded-lg text-xs font-bold transition flex items-center space-x-2 bg-emerald-950 text-emerald-400 border border-emerald-800 shadow";
+        fetchAudits();
+      } else if (view === 'toolkit') {
+        viewToolkit.classList.remove('hidden');
+        btnToolkit.className = "px-3.5 py-1.5 rounded-lg text-xs font-bold transition flex items-center space-x-2 bg-indigo-950 text-indigo-400 border border-indigo-800 shadow";
+      }
+    }
+
+    // Drag and drop file hasher
+    const dropZone = document.getElementById('drop-zone');
+    if (dropZone) {
+      ['dragenter', 'dragover'].forEach(eventName => {
+        dropZone.addEventListener(eventName, (e) => {
+          e.preventDefault();
+          dropZone.classList.add('border-indigo-400', 'bg-indigo-950/20');
+        });
+      });
+      ['dragleave', 'drop'].forEach(eventName => {
+        dropZone.addEventListener(eventName, (e) => {
+          e.preventDefault();
+          dropZone.classList.remove('border-indigo-400', 'bg-indigo-950/20');
+        });
+      });
+      dropZone.addEventListener('drop', (e) => {
+        if (e.dataTransfer.files.length > 0) {
+          processFileForHash(e.dataTransfer.files[0]);
+        }
+      });
+    }
+
+    function handleFileSelect(event) {
+      if (event.target.files.length > 0) {
+        processFileForHash(event.target.files[0]);
+      }
+    }
+
+    async function processFileForHash(file) {
+      const resultBox = document.getElementById('hash-result-box');
+      resultBox.innerHTML = `
+        <div class="text-xs text-indigo-300 py-3 text-center">
+          <i class="fa-solid fa-spinner fa-spin mr-1.5"></i>Calcul de l'empreinte SHA-256 en cours pour <strong>${file.name}</strong>...
+        </div>
+      `;
+
+      try {
+        const buffer = await file.arrayBuffer();
+        const hashBuffer = await crypto.subtle.digest('SHA-256', buffer);
+        const hashArray = Array.from(new Uint8Array(hashBuffer));
+        const sha256 = hashArray.map(b => b.toString(16).padStart(2, '0')).join('');
+        
+        const sizeKb = (file.size / 1024).toFixed(1);
+        const vtUrl = `https://www.virustotal.com/gui/search/${sha256}`;
+
+        resultBox.innerHTML = `
+          <div class="space-y-3">
+            <div class="flex items-center justify-between text-xs">
+              <span class="text-white font-bold truncate max-w-[70%]">${file.name}</span>
+              <span class="text-slate-400 font-mono">${sizeKb} Ko</span>
+            </div>
+            
+            <div class="bg-slate-900 border border-slate-800 p-2.5 rounded-lg space-y-1">
+              <span class="text-[10px] text-slate-500 font-mono block">EMPREINTE SHA-256 (CLIENT-SIDE) :</span>
+              <code class="text-cyan-400 text-[11px] font-mono select-all break-all block">${sha256}</code>
+            </div>
+
+            <div class="flex items-center space-x-2">
+              <a href="${vtUrl}" target="_blank" class="flex-1 py-2 px-3 rounded-lg bg-emerald-600 hover:bg-emerald-500 text-white font-bold text-xs transition text-center flex items-center justify-center space-x-1.5 shadow">
+                <i class="fa-solid fa-shield-virus"></i>
+                <span>Consulter le Rapport sur VirusTotal</span>
+              </a>
+              <button onclick="navigator.clipboard.writeText('${sha256}'); alert('Hash SHA-256 copié !')" class="px-3 py-2 rounded-lg bg-slate-800 hover:bg-slate-700 text-slate-300 text-xs transition">
+                <i class="fa-solid fa-copy"></i>
+              </button>
+            </div>
+          </div>
+        `;
+
+      } catch (err) {
+        resultBox.innerHTML = `<div class="text-xs text-red-400 py-2">Erreur lors du calcul du hash: ${err.message}</div>`;
+      }
+    }
+
+    function queryManualHash() {
+      const input = document.getElementById('manual-hash-input');
+      const hash = (input.value || '').trim();
+      if (!hash) {
+        alert('Veuillez entrer un hash (SHA256, MD5 ou SHA1)');
+        return;
+      }
+      window.open(`https://www.virustotal.com/gui/search/${encodeURIComponent(hash)}`, '_blank');
+    }
+
+    let trafficChart;
+    const chartTimeLabels = [];
+    const chartNormalData = [];
+    const chartAnomalyData = [];
+
+    function initChart() {
+      const ctx = document.getElementById('trafficChart').getContext('2d');
+      trafficChart = new Chart(ctx, {
+        type: 'line',
+        data: {
+          labels: chartTimeLabels,
+          datasets: [
+            {
+              label: 'Requêtes Normales (2xx)',
+              data: chartNormalData,
+              borderColor: '#38bdf8',
+              backgroundColor: 'rgba(56, 189, 248, 0.1)',
+              tension: 0.35,
+              fill: true,
+              borderWidth: 2,
+              pointRadius: 2
+            },
+            {
+              label: 'Anomalies & Erreurs (4xx/5xx)',
+              data: chartAnomalyData,
+              borderColor: '#ef4444',
+              backgroundColor: 'rgba(239, 68, 68, 0.15)',
+              tension: 0.35,
+              fill: true,
+              borderWidth: 2,
+              pointRadius: 3
+            }
+          ]
+        },
+        options: {
+          responsive: true,
+          maintainAspectRatio: false,
+          plugins: { legend: { display: false } },
+          scales: {
+            x: { grid: { color: '#1e293b' }, ticks: { color: '#64748b', font: { size: 10 } } },
+            y: { beginAtZero: true, grid: { color: '#1e293b' }, ticks: { color: '#64748b', font: { size: 10 } } }
+          }
+        }
+      });
+    }
+
+    function formatTime(isoStr) {
+      if (!isoStr) return "";
+      const d = new Date(isoStr);
+      return d.toLocaleTimeString('fr-FR', { hour: '2-digit', minute: '2-digit', second: '2-digit' });
+    }
+
+    async function fetchStats() {
+      try {
+        const res = await fetch(`${API_BASE}/logs/stats`);
+        if (!res.ok) return;
+        const data = await res.json();
+        
+        document.getElementById('stat-total-logs').textContent = data.total_logs;
+        document.getElementById('stat-recent-activity').textContent = data.recent_activity_count;
+        document.getElementById('stat-failed-auth').textContent = data.total_failed_logins;
+        
+        if (data.total_logs > 0) {
+          const ratio = ((data.total_failed_logins / data.total_logs) * 100).toFixed(1);
+          document.getElementById('stat-auth-ratio').textContent = `${ratio}% du total`;
+        }
+      } catch (err) {}
+    }
+
+    async function fetchAlerts() {
+      try {
+        const res = await fetch(`${API_BASE}/alerts?limit=25`);
+        if (!res.ok) return;
+        const alerts = await res.json();
+        
+        const container = document.getElementById('alerts-list');
+        const activeAlerts = alerts.filter(a => a.status === 'PENDING');
+        
+        document.getElementById('stat-active-alerts').textContent = activeAlerts.length;
+        document.getElementById('alerts-badge-count').textContent = activeAlerts.length;
+        
+        const criticalCount = activeAlerts.filter(a => a.severity === 'CRITICAL').length;
+        const critTag = document.getElementById('stat-critical-count');
+        critTag.textContent = `${criticalCount} CRITICAL`;
+        if (criticalCount > 0) {
+          critTag.classList.add('pulse-danger', 'bg-red-900', 'text-white');
+        } else {
+          critTag.classList.remove('pulse-danger', 'bg-red-900', 'text-white');
+        }
+
+        if (activeAlerts.length === 0) {
+          container.innerHTML = `
+            <div class="text-center py-10 text-slate-500 text-xs">
+              <i class="fa-solid fa-shield-cat text-2xl text-slate-600 mb-2 block"></i>
+              Aucun incident critique non résolu.
+            </div>`;
+          return;
+        }
+
+        container.innerHTML = activeAlerts.map(alert => {
+          let sevColor = "border-red-600 bg-red-950/40 text-red-400";
+          let badge = "bg-red-950 text-red-300 border-red-800";
+          if (alert.severity === 'HIGH') {
+            sevColor = "border-amber-600 bg-amber-950/30 text-amber-400";
+            badge = "bg-amber-950 text-amber-300 border-amber-800";
+          } else if (alert.severity === 'MEDIUM') {
+            sevColor = "border-yellow-600 bg-yellow-950/20 text-yellow-300";
+            badge = "bg-yellow-950 text-yellow-300 border-yellow-800";
+          }
+
+          let icon = "fa-triangle-exclamation";
+          if (alert.alert_type === "IMPOSSIBLE_TRAVEL") icon = "fa-plane-slash";
+          else if (alert.alert_type === "BRUTE_FORCE") icon = "fa-key";
+          else if (alert.alert_type === "RECON_SCAN") icon = "fa-radar";
+          else if (alert.alert_type === "ML_ANOMALY") icon = "fa-brain";
+          else if (alert.alert_type === "ENDPOINT_SECURITY_FLAW") icon = "fa-laptop-file";
+
+          return `
+            <div class="border-l-4 ${sevColor} p-3.5 rounded-r-lg bg-soc-card border border-soc-border shadow transition hover:border-slate-600">
+              <div class="flex items-start justify-between">
+                <div class="flex items-center space-x-2">
+                  <i class="fa-solid ${icon} text-sm"></i>
+                  <span class="font-bold text-xs tracking-wide">${alert.alert_type}</span>
+                </div>
+                <span class="text-[10px] font-bold px-2 py-0.5 rounded border ${badge}">${alert.severity}</span>
+              </div>
+              
+              <p class="text-xs text-slate-200 mt-2 leading-relaxed font-sans">${alert.description}</p>
+              
+              <div class="mt-2.5 pt-2 border-t border-slate-800 flex items-center justify-between text-[11px] font-mono text-slate-400">
+                <span>Cible: <strong class="text-cyan-400">${alert.source_ip}</strong></span>
+                <span>${formatTime(alert.timestamp)}</span>
+              </div>
+
+              <div class="mt-3 flex items-center space-x-2">
+                <button onclick="banIp(${alert.id})" class="flex-1 bg-red-600/90 hover:bg-red-600 text-white font-semibold py-1 px-2.5 rounded text-xs transition flex items-center justify-center space-x-1 shadow shadow-red-900/30">
+                  <i class="fa-solid fa-ban text-[10px]"></i>
+                  <span>Bannir l'IP</span>
+                </button>
+                <button onclick="resolveAlert(${alert.id})" class="bg-slate-800 hover:bg-slate-700 text-slate-300 py-1 px-2.5 rounded text-xs transition flex items-center space-x-1">
+                  <i class="fa-solid fa-check text-[10px]"></i>
+                  <span>Acquitter</span>
+                </button>
+              </div>
+            </div>
+          `;
+        }).join('');
+
+      } catch (err) {}
+    }
+
+    async function fetchLogs() {
+      try {
+        const res = await fetch(`${API_BASE}/logs?limit=15`);
+        if (!res.ok) return;
+        const logs = await res.json();
+        
+        document.getElementById('log-count-tag').textContent = `${logs.length} affichés`;
+
+        const tbody = document.getElementById('logs-tbody');
+        if (logs.length === 0) {
+          tbody.innerHTML = '<tr><td colspan="6" class="text-center py-6 text-slate-500">Aucun log dans la base.</td></tr>';
+          return;
+        }
+
+        tbody.innerHTML = logs.map(log => {
+          let statusBadge = "bg-emerald-950 text-emerald-400 border-emerald-800";
+          if (log.http_status >= 400 && log.http_status < 500) statusBadge = "bg-amber-950 text-amber-400 border-amber-800";
+          if (log.http_status >= 500) statusBadge = "bg-red-950 text-red-400 border-red-800";
+
+          let flagHtml = `<span class="text-slate-500 text-[11px]"><i class="fa-solid fa-circle-check text-emerald-500 mr-1"></i>Normal</span>`;
+          let rowBg = "";
+          if (log.is_flagged) {
+            flagHtml = `<span class="px-1.5 py-0.5 rounded text-[10px] font-bold bg-red-950 text-red-300 border border-red-800 flex items-center w-fit space-x-1"><i class="fa-solid fa-triangle-exclamation mr-1"></i>${log.flag_reason || 'FLAGGED'}</span>`;
+            rowBg = "bg-red-950/20";
+          }
+
+          const cityStr = log.city ? `${log.city} (${log.country_code})` : (log.country_code || '-');
+
+          return `
+            <tr class="${rowBg} hover:bg-slate-800/40 transition">
+              <td class="py-2 px-3 text-slate-400 text-[11px]">${formatTime(log.timestamp)}</td>
+              <td class="py-2 px-3 font-semibold text-slate-200">${log.user_identifier || 'anonymous'}</td>
+              <td class="py-2 px-3 text-slate-300">
+                <span class="text-cyan-400">${log.ip_address}</span>
+                <span class="text-slate-500 text-[10px] block">${cityStr}</span>
+              </td>
+              <td class="py-2 px-3">
+                <span class="text-[10px] px-1 py-0.5 rounded bg-slate-800 text-slate-300 font-bold mr-1">${log.http_method}</span>
+                <span class="text-slate-300 text-xs">${log.endpoint}</span>
+              </td>
+              <td class="py-2 px-3">
+                <span class="px-1.5 py-0.5 rounded text-[10px] font-bold border ${statusBadge}">${log.http_status}</span>
+              </td>
+              <td class="py-2 px-3">${flagHtml}</td>
+            </tr>
+          `;
+        }).join('');
+
+        const nowLabel = new Date().toLocaleTimeString('fr-FR', { minute: '2-digit', second: '2-digit' });
+        const normalCount = logs.filter(l => l.http_status < 400).length;
+        const anomalyCount = logs.filter(l => l.http_status >= 400 || l.is_flagged).length;
+
+        if (chartTimeLabels.length > 15) {
+          chartTimeLabels.shift();
+          chartNormalData.shift();
+          chartAnomalyData.shift();
+        }
+
+        chartTimeLabels.push(nowLabel);
+        chartNormalData.push(normalCount);
+        chartAnomalyData.push(anomalyCount);
+        if (trafficChart) trafficChart.update('none');
+
+      } catch (err) {}
+    }
+
+    async function fetchBlacklist() {
+      try {
+        const res = await fetch(`${API_BASE}/blacklist`);
+        if (!res.ok) return;
+        const ips = await res.json();
+        
+        document.getElementById('stat-blacklisted-ips').textContent = ips.length;
+        const container = document.getElementById('blacklist-container');
+
+        if (ips.length === 0) {
+          container.innerHTML = '<div class="text-slate-500 py-3 text-center">Aucune IP bannie pour l\'instant.</div>';
+          return;
+        }
+
+        container.innerHTML = ips.map(item => `
+          <div class="flex items-center justify-between p-2 rounded bg-slate-950/70 border border-slate-800">
+            <div>
+              <span class="font-mono text-red-400 font-bold">${item.ip_address}</span>
+              <span class="text-[10px] text-slate-400 block">${item.reason || 'Attaque détectée'}</span>
+            </div>
+            <button onclick="unbanIp('${item.ip_address}')" class="text-[10px] bg-slate-800 hover:bg-slate-700 text-slate-300 px-2 py-0.5 rounded transition">
+              Débloquer
+            </button>
+          </div>
+        `).join('');
+
+      } catch (err) {}
+    }
+
+    async function fetchAudits() {
+      try {
+        const res = await fetch(`${API_BASE}/audits`);
+        if (!res.ok) return;
+        const audits = await res.json();
+
+        document.getElementById('nav-audits-count').textContent = audits.length;
+        document.getElementById('audit-total-machines').textContent = audits.length;
+
+        if (audits.length === 0) {
+          document.getElementById('audit-avg-score').textContent = "--";
+          document.getElementById('audit-total-flaws').textContent = "0";
+          document.getElementById('audits-list-container').innerHTML = `
+            <div class="text-center py-12 text-slate-500 text-xs">
+              <i class="fa-solid fa-server text-3xl mb-3 text-slate-600 block"></i>
+              Aucun audit reçu pour le moment. Lancez le script <code class="text-cyan-400 font-mono">.\sentinel_audit.ps1</code> sur vos postes pour afficher le diagnostic ici.
+            </div>
+          `;
+          return;
+        }
+
+        const avgScore = Math.round(audits.reduce((acc, a) => acc + a.security_score, 0) / audits.length);
+        const totalFlaws = audits.reduce((acc, a) => acc + (a.findings ? a.findings.length : 0), 0);
+
+        document.getElementById('audit-avg-score').textContent = avgScore;
+        document.getElementById('audit-total-flaws').textContent = totalFlaws;
+
+        const container = document.getElementById('audits-list-container');
+        container.innerHTML = audits.map(audit => {
+          let scoreBadgeColor = "text-emerald-400 border-emerald-500/40 bg-emerald-950/30";
+          if (audit.security_score < 45) scoreBadgeColor = "text-red-400 border-red-500/40 bg-red-950/30";
+          else if (audit.security_score < 70) scoreBadgeColor = "text-amber-400 border-amber-500/40 bg-amber-950/30";
+          else if (audit.security_score < 90) scoreBadgeColor = "text-yellow-400 border-yellow-500/40 bg-yellow-950/30";
+
+          const findingsHtml = (audit.findings || []).map(f => {
+            let fBadge = "bg-red-950 text-red-300 border-red-800";
+            if (f.severity === 'HIGH') fBadge = "bg-amber-950 text-amber-300 border-amber-800";
+            if (f.severity === 'MEDIUM') fBadge = "bg-yellow-950 text-yellow-300 border-yellow-800";
+
+            return `
+              <div class="bg-slate-950 border border-slate-800 rounded-xl p-4 space-y-2.5">
+                <div class="flex items-center justify-between">
+                  <div class="flex items-center space-x-2">
+                    <span class="text-xs font-bold text-white">${f.title}</span>
+                    <span class="text-[10px] px-1.5 py-0.5 rounded border ${fBadge} font-bold">${f.severity}</span>
+                  </div>
+                  <span class="text-[10px] font-mono text-slate-500 uppercase">${f.category}</span>
+                </div>
+                
+                <p class="text-xs text-slate-300"><strong class="text-slate-400">Constat :</strong> ${f.observation}</p>
+                <p class="text-xs text-slate-400"><strong class="text-red-400/90">Danger :</strong> ${f.risk}</p>
+                
+                <div class="bg-emerald-950/30 border border-emerald-900/50 rounded-lg p-3 text-xs">
+                  <div class="text-emerald-300 font-semibold mb-1 flex items-center space-x-1.5">
+                    <i class="fa-solid fa-lightbulb"></i>
+                    <span>Solution Recommandée :</span>
+                  </div>
+                  <p class="text-slate-300 text-xs">${f.solution}</p>
+                  
+                  ${f.remediation_command ? `
+                    <div class="mt-2 pt-2 border-t border-emerald-900/40 flex items-center justify-between font-mono text-[11px] bg-slate-950 p-2 rounded">
+                      <code class="text-cyan-400 truncate max-w-[80%]">${f.remediation_command}</code>
+                      <button onclick="navigator.clipboard.writeText('${f.remediation_command.replace(/'/g, "\\'")}'); alert('Commande de remédiation copiée !')" class="px-2 py-1 rounded bg-slate-800 hover:bg-slate-700 text-slate-300 transition text-[10px]">
+                        <i class="fa-solid fa-copy mr-1"></i>Copier
+                      </button>
+                    </div>
+                  ` : ''}
+                </div>
+              </div>
+            `;
+          }).join('');
+
+          return `
+            <div class="bg-slate-900/90 border border-soc-border rounded-2xl p-5 shadow space-y-4">
+              <div class="flex flex-col md:flex-row items-start md:items-center justify-between gap-3 pb-4 border-b border-slate-800">
+                <div class="flex items-center space-x-3">
+                  <div class="w-14 h-14 rounded-2xl border-2 ${scoreBadgeColor} flex flex-col items-center justify-center font-mono">
+                    <span class="text-lg font-extrabold leading-none">${audit.security_score}</span>
+                    <span class="text-[9px] uppercase font-bold tracking-tight">/100</span>
+                  </div>
+                  <div>
+                    <div class="flex items-center space-x-2">
+                      <h4 class="font-extrabold text-base text-white font-mono">${audit.hostname}</h4>
+                      <span class="text-xs px-2 py-0.5 rounded font-bold ${scoreBadgeColor}">${audit.risk_level}</span>
+                    </div>
+                    <p class="text-xs text-slate-400 mt-0.5">${audit.os_version} | IP : <strong class="text-cyan-400 font-mono">${audit.ip_address}</strong></p>
+                  </div>
+                </div>
+
+                <div class="text-right text-xs text-slate-500 font-mono">
+                  <span>Dernier audit : ${new Date(audit.timestamp).toLocaleString('fr-FR')}</span>
+                </div>
+              </div>
+
+              <!-- Findings details -->
+              <div class="space-y-3">
+                <h5 class="text-xs font-bold uppercase tracking-wider text-slate-400 flex items-center space-x-1.5">
+                  <i class="fa-solid fa-triangle-exclamation text-amber-400"></i>
+                  <span>Failles Détectées & Solutions Recommandées (${(audit.findings || []).length})</span>
+                </h5>
+                <div class="grid grid-cols-1 gap-3">
+                  ${findingsHtml || '<p class="text-xs text-emerald-400 py-3">Aucune faille détectée sur ce poste.</p>'}
+                </div>
+              </div>
+            </div>
+          `;
+        }).join('');
+
+      } catch (err) {}
+    }
+
+    async function banIp(alertId) {
+      if (!confirm(`Confirmer le bannissement immédiat de l'IP source de l'incident #${alertId} ?`)) return;
+      try {
+        const res = await fetch(`${API_BASE}/alerts/${alertId}/ban`, { method: 'POST' });
+        if (res.ok) { fetchAlerts(); fetchBlacklist(); }
+      } catch (err) {}
+    }
+
+    async function resolveAlert(alertId) {
+      try {
+        const res = await fetch(`${API_BASE}/alerts/${alertId}`, {
+          method: 'PATCH',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ status: 'RESOLVED' })
+        });
+        if (res.ok) fetchAlerts();
+      } catch (err) {}
+    }
+
+    async function unbanIp(ipAddress) {
+      if (!confirm(`Débloquer l'adresse IP ${ipAddress} ?`)) return;
+      try {
+        const res = await fetch(`${API_BASE}/blacklist/${ipAddress}`, { method: 'DELETE' });
+        if (res.ok) fetchBlacklist();
+      } catch (err) {}
+    }
+
+    async function updateAll() {
+      document.getElementById('last-sync-time').textContent = new Date().toLocaleTimeString();
+      await Promise.all([fetchStats(), fetchAlerts(), fetchLogs(), fetchBlacklist(), fetchAudits()]);
+    }
+
+    window.addEventListener('DOMContentLoaded', () => {
+      initChart();
+      updateAll();
+      setInterval(updateAll, 2000);
+    });
+  </script>
+</body>
+</html>

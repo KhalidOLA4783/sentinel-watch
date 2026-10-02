@@ -1,0 +1,41 @@
+version: '3.8'
+
+services:
+  # Base de données PostgreSQL locale (miroir de Cloud SQL)
+  db:
+    image: postgres:16-alpine
+    container_name: sentinelwatch-db
+    restart: always
+    environment:
+      POSTGRES_USER: sentinel_user
+      POSTGRES_PASSWORD: sentinel_password_secure
+      POSTGRES_DB: sentinelwatch_db
+    ports:
+      - "5432:5432"
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U sentinel_user -d sentinelwatch_db"]
+      interval: 5s
+      timeout: 5s
+      retries: 5
+
+  # API Backend FastAPI
+  backend:
+    build:
+      context: ./backend
+      dockerfile: Dockerfile
+    container_name: sentinelwatch-backend
+    restart: always
+    depends_on:
+      db:
+        condition: service_healthy
+    environment:
+      - DATABASE_URL=postgresql://sentinel_user:sentinel_password_secure@db:5432/sentinelwatch_db
+      - PORT=8080
+      - DEBUG=False
+    ports:
+      - "8000:8080"
+
+volumes:
+  postgres_data:

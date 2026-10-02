@@ -1,0 +1,52 @@
+# ==============================================================================
+# SentinelWatch - Git Ignore Configuration
+# ==============================================================================
+
+# --- Python & Backend ---
+sentinel-watch/backend/venv/
+venv/
+env/
+ENV/
+__pycache__/
+*.py[cod]
+*$py.class
+*.so
+.pytest_cache/
+.coverage
+htmlcov/
+
+# Databases & Local Secrets
+*.db
+*.sqlite
+*.sqlite3
+sentinelwatch.db
+sentinel-watch/backend/sentinelwatch.db
+.env
+*.env.local
+
+# --- Flutter & Mobile ---
+sentinel-watch/mobile/.dart_tool/
+sentinel-watch/mobile/.flutter-plugins
+sentinel-watch/mobile/.flutter-plugins-dependencies
+sentinel-watch/mobile/.packages
+sentinel-watch/mobile/build/
+sentinel-watch/mobile/android/.gradle/
+sentinel-watch/mobile/android/local.properties
+sentinel-watch/mobile/android/app/build/
+
+# Compiled Binary APKs (too large for GitHub)
+*.apk
+*.aab
+SentinelWatch.apk
+app-release.apk
+
+# --- OS & IDE artifacts ---
+.DS_Store
+Thumbs.db
+ehthumbs.db
+Desktop.ini
+.vscode/
+.idea/
+*.sublime-project
+*.sublime-workspace
+.gemini/
