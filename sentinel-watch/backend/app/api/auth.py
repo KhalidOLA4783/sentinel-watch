@@ -1,11 +1,14 @@
 import hashlib
 import secrets
+from datetime import datetime
 from typing import Optional
-from fastapi import APIRouter, Depends, HTTPException, status
+from fastapi import APIRouter, Depends, HTTPException, status, Request
 from sqlalchemy.orm import Session
 
 from app.database import get_db, SessionLocal
 from app.models.user import User
+from app.models.log import AccessLog
+from app.detection.engine import detection_engine
 from app.schemas.user import UserRegister, UserLogin, UserOut, AuthResponse
 
 router = APIRouter(prefix="/auth", tags=["Authentication & Users"])
@@ -70,18 +73,50 @@ def register(user_in: UserRegister, db: Session = Depends(get_db)):
     return AuthResponse(token=token, user=UserOut.model_validate(new_user))
 
 @router.post("/login", response_model=AuthResponse)
-def login(creds: UserLogin, db: Session = Depends(get_db)):
-    """Connexion d'un utilisateur par nom d'utilisateur ou email."""
+def login(creds: UserLogin, request: Request, db: Session = Depends(get_db)):
+    """Connexion d'un utilisateur par nom d'utilisateur ou email avec protection anti-bruteforce en direct."""
+    client_ip = request.client.host if request.client else "127.0.0.1"
     identifier = creds.username_or_email.strip()
     user = db.query(User).filter(
         (User.username == identifier) | (User.email == identifier.lower())
     ).first()
 
     if not user or not verify_password(creds.password, user.hashed_password):
+        # Enregistrement de l'échec d'authentification dans les logs de sécurité
+        failed_log = AccessLog(
+            timestamp=datetime.utcnow(),
+            user_identifier=identifier or "unknown",
+            ip_address=client_ip,
+            http_method="POST",
+            endpoint="/api/v1/auth/login",
+            http_status=401,
+            is_flagged=False
+        )
+        db.add(failed_log)
+        db.commit()
+        db.refresh(failed_log)
+
+        # Déclenchement immédiat de l'analyse heuristique (Force Brute) et IA
+        detection_engine.analyze_log(db, failed_log)
+
         raise HTTPException(
             status_code=status.HTTP_401_UNAUTHORIZED,
             detail="Identifiants incorrects (nom d'utilisateur ou mot de passe invalide)."
         )
+
+    # Enregistrement de la connexion légitime
+    success_log = AccessLog(
+        timestamp=datetime.utcnow(),
+        user_identifier=user.username,
+        ip_address=client_ip,
+        http_method="POST",
+        endpoint="/api/v1/auth/login",
+        http_status=200,
+        is_flagged=False
+    )
+    db.add(success_log)
+    db.commit()
+    db.refresh(success_log)
 
     token = f"sw_token_{user.id}_{secrets.token_hex(16)}"
     return AuthResponse(token=token, user=UserOut.model_validate(user))
