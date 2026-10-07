@@ -7,7 +7,7 @@ echo    SENTINELWATCH - SCAN DE SECURITE DU POSTE (SCORE & REMEDIATION)
 echo ======================================================================
 echo.
 
-powershell.exe -NoProfile -ExecutionPolicy Bypass -File ".\sentinel_audit.ps1" -ApiUrl "http://127.0.0.1:8000/api/v1/audits"
+powershell.exe -NoProfile -ExecutionPolicy Bypass -File ".\sentinel_audit.ps1" -ApiUrl "https://sentinel-watch-ssty.onrender.com/api/v1/audits"
 
 echo.
 echo ======================================================================

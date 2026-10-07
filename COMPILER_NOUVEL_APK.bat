@@ -40,8 +40,9 @@ if exist "sentinel-watch\mobile\build\app\outputs\flutter-apk\app-release.apk" (
     echo.
     echo Ce nouvel APK comprend :
     echo   1. Le systeme de Connexion / Creation de compte utilisateur
-    echo   2. L'autorisation reseau HTTP Wi-Fi vers votre PC (10.20.4.12)
+    echo   2. La connexion 24h/24 au Cloud Render (https://sentinel-watch-ssty.onrender.com)
     echo   3. Le Pilote Autonome de securite (remediation 1-clic sur mobile)
+    echo   4. Fonctionne partout en 4G/5G et Wi-Fi, meme en dehors de chez vous !
     echo.
     echo Envoyez ce fichier "SentinelWatch.apk" sur votre smartphone
     echo (via WhatsApp Web, Bluetooth, Telegram ou cable USB),

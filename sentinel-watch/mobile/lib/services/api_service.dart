@@ -11,8 +11,8 @@ class ApiService {
   factory ApiService() => _instance;
   ApiService._internal();
 
-  // URL par défaut : 10.20.4.12 pour mobile réel, 127.0.0.1 pour Web/Desktop
-  String baseUrl = kIsWeb ? 'http://127.0.0.1:8000/api/v1' : 'http://10.20.4.12:8000/api/v1';
+  // URL officielle Cloud : connectée 24h/24 sur Internet mondial
+  String baseUrl = 'https://sentinel-watch-ssty.onrender.com/api/v1';
 
   UserModel? currentUser;
   String? authToken;
@@ -38,7 +38,7 @@ class ApiService {
           'username_or_email': usernameOrEmail.trim(),
           'password': password,
         }),
-      ).timeout(const Duration(seconds: 5));
+      ).timeout(const Duration(seconds: 25));
 
       if (response.statusCode == 200) {
         final data = jsonDecode(response.body);
@@ -50,7 +50,7 @@ class ApiService {
         return {'success': false, 'error': err['detail'] ?? 'Identifiants invalides'};
       }
     } catch (e) {
-      return {'success': false, 'error': 'Serveur inaccessible sur $baseUrl. Vérifiez le Wi-Fi et le pare-feu du PC.'};
+      return {'success': false, 'error': 'Connexion au serveur Cloud ($baseUrl) impossible ou lente à répondre. Réessayez dans quelques secondes.'};
     }
   }
 
@@ -71,7 +71,7 @@ class ApiService {
           'full_name': fullName ?? username,
           'role': 'ANALYST',
         }),
-      ).timeout(const Duration(seconds: 5));
+      ).timeout(const Duration(seconds: 25));
 
       if (response.statusCode == 201) {
         final data = jsonDecode(response.body);
@@ -83,7 +83,7 @@ class ApiService {
         return {'success': false, 'error': err['detail'] ?? 'Erreur lors de la création du compte'};
       }
     } catch (e) {
-      return {'success': false, 'error': 'Impossible de joindre le serveur ($baseUrl).'};
+      return {'success': false, 'error': 'Impossible de joindre le serveur Cloud ($baseUrl).'};
     }
   }
 
@@ -96,7 +96,7 @@ class ApiService {
   Future<SystemStats> fetchStats() async {
     try {
       final response = await http.get(Uri.parse('$baseUrl/logs/stats')).timeout(
-        const Duration(seconds: 4),
+        const Duration(seconds: 15),
       );
       if (response.statusCode == 200) {
         final data = jsonDecode(response.body) as Map<String, dynamic>;
@@ -114,7 +114,7 @@ class ApiService {
         url += '&status=$status';
       }
       final response = await http.get(Uri.parse(url)).timeout(
-        const Duration(seconds: 4),
+        const Duration(seconds: 15),
       );
       if (response.statusCode == 200) {
         final List<dynamic> list = jsonDecode(response.body);
@@ -129,7 +129,7 @@ class ApiService {
     try {
       final response = await http.post(
         Uri.parse('$baseUrl/alerts/$alertId/ban'),
-      ).timeout(const Duration(seconds: 5));
+      ).timeout(const Duration(seconds: 12));
       return response.statusCode == 200;
     } catch (_) {
       return false;

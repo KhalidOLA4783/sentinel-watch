@@ -5,7 +5,7 @@
 # ==============================================================================
 
 param (
-    [string]$ApiUrl = "http://127.0.0.1:8000/api/v1/audits",
+    [string]$ApiUrl = "https://sentinel-watch-ssty.onrender.com/api/v1/audits",
     [switch]$Standalone = $false
 )
 
@@ -454,7 +454,7 @@ if (-not $Standalone -and -not [string]::IsNullOrWhiteSpace($ApiUrl)) {
     $PayloadJson = $PayloadObj | ConvertTo-Json -Depth 5
 
     try {
-        $Response = Invoke-RestMethod -Uri $ApiUrl -Method Post -Body $PayloadJson -ContentType "application/json; charset=utf-8" -TimeoutSec 5
+        $Response = Invoke-RestMethod -Uri $ApiUrl -Method Post -Body $PayloadJson -ContentType "application/json; charset=utf-8" -TimeoutSec 25
         Write-Host "[OK] Rapport transmis avec succes au SOC SentinelWatch ! (ID Audit: $($Response.id))" -ForegroundColor Green
     } catch {
         Write-Host "[!] Le serveur SentinelWatch n'etait pas joignable ($ApiUrl). Le rapport est affiche ci-dessus en local." -ForegroundColor DarkYellow
