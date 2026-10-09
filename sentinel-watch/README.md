@@ -1,7 +1,41 @@
 # 🛡️ SentinelWatch — Tour de Contrôle Sécurité & SIEM Allégé
 
 > **Système complet de détection d'intrusions, supervision SOC en direct et intervention d'urgence mobile.**  
-> Ingestion de logs, détection heuristique & Machine Learning (Isolation Forest), Dashboard Web SOC (React/Tailwind) et Application Mobile Flutter, déployable sur Google Cloud Platform (Cloud Run + Cloud SQL).
+> Ingestion de logs, détection heuristique & Machine Learning (Isolation Forest), Dashboard Web SOC cloisonné multi-organisation, Agent d'audit Windows EDR silencieux et Application Mobile Flutter.
+
+<p align="center">
+  <a href="https://render.com/deploy?repo=https://github.com/KhalidOLA4783/sentinel-watch">
+    <img src="https://render.com/images/deploy-to-render-button.svg" alt="Deploy to Render">
+  </a>
+  <a href="https://sentinel-watch-ssty.onrender.com/dashboard">
+    <img src="https://img.shields.io/badge/Demo%20Live-Render%20Cloud-00c7b7?logo=render&logoColor=white" alt="Live Demo">
+  </a>
+  <img src="https://img.shields.io/badge/Python-3.11-3776AB?logo=python&logoColor=white" alt="Python 3.11">
+  <img src="https://img.shields.io/badge/FastAPI-0.110-009688?logo=fastapi&logoColor=white" alt="FastAPI">
+  <img src="https://img.shields.io/badge/Flutter-Mobile-02569B?logo=flutter&logoColor=white" alt="Flutter">
+</p>
+
+---
+
+## 🚀 Deux Façons d'Utiliser SentinelWatch
+
+SentinelWatch s'adapte aussi bien aux entreprises cherchant une solution clé en main qu'aux ingénieurs souhaitant un déploiement 100% privé :
+
+### 🌟 Mode 1 : SaaS Cloud Multi-Organisation (Prêt à l'emploi)
+- Accédez directement à la console en ligne : **[https://sentinel-watch-ssty.onrender.com/dashboard](https://sentinel-watch-ssty.onrender.com/dashboard)**
+- Cliquez sur **« Créer une Organisation »** pour ouvrir votre espace dédié étanche.
+- Dans l'onglet *Audits Postes Entreprise*, cliquez sur **« Télécharger .bat »** pour lier vos PC en tâche de fond 24h/24.
+
+### 🛠️ Mode 2 : Déploiement Dédié Autonome (Self-Hosted en 1 Clic)
+Pour héberger votre propre serveur totalement indépendant :
+- **En 1 Clic sur Render** : Cliquez sur le bouton **[Deploy to Render]** ci-dessus pour lancer votre propre instance gratuite.
+- **En local ou VPS avec Docker Compose** :
+  ```bash
+  git clone https://github.com/KhalidOLA4783/sentinel-watch.git
+  cd sentinel-watch
+  docker compose up -d
+  ```
+  Accédez à votre console locale : `http://localhost:8000/dashboard`
 
 ---
 
