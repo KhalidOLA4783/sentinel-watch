@@ -48,9 +48,7 @@ if exist "sentinel-watch\mobile\build\app\outputs\flutter-apk\app-release.apk" (
     echo.
     echo Envoyez ce fichier "SentinelWatch.apk" sur votre smartphone
     echo (via WhatsApp Web, Bluetooth, Telegram ou cable USB),
-    echo puis installez-le et connectez-vous avec :
-    echo   - Nom d'utilisateur : admin
-    echo   - Mot de passe : Admin123!
+    echo puis installez-le et connectez-vous avec vos identifiants personnels.
     echo ======================================================================
 ) else (
     echo [ERREUR] Le fichier APK n'a pas ete trouve.

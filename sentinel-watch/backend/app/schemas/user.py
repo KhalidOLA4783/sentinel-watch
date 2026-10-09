@@ -31,3 +31,10 @@ class AuthResponse(BaseModel):
     token: str
     token_type: str = "bearer"
     user: UserOut
+
+class ChangeCredentialsRequest(BaseModel):
+    current_username_or_email: str
+    current_password: str
+    new_username: Optional[str] = None
+    new_password: str
+

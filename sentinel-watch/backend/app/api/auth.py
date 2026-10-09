@@ -9,7 +9,7 @@ from app.database import get_db, SessionLocal
 from app.models.user import User
 from app.models.log import AccessLog
 from app.detection.engine import detection_engine
-from app.schemas.user import UserRegister, UserLogin, UserOut, AuthResponse
+from app.schemas.user import UserRegister, UserLogin, UserOut, AuthResponse, ChangeCredentialsRequest
 
 router = APIRouter(prefix="/auth", tags=["Authentication & Users"])
 
@@ -139,3 +139,47 @@ def get_current_user_info(db: Session = Depends(get_db)):
     if not user:
         raise HTTPException(status_code=404, detail="Aucun utilisateur configuré.")
     return user
+
+@router.post("/change-credentials")
+def change_credentials(payload: ChangeCredentialsRequest, db: Session = Depends(get_db)):
+    """Permet à un utilisateur de modifier son identifiant et/ou son mot de passe en validant son mot de passe actuel."""
+    identifier = payload.current_username_or_email.strip()
+    user = db.query(User).filter(
+        (User.username == identifier) | (User.email == identifier.lower())
+    ).first()
+
+    if not user or not verify_password(payload.current_password, user.hashed_password):
+        raise HTTPException(
+            status_code=status.HTTP_401_UNAUTHORIZED,
+            detail="Identifiants actuels incorrects (mot de passe actuel invalide)."
+        )
+
+    if payload.new_username and payload.new_username.strip():
+        new_u = payload.new_username.strip()
+        if new_u != user.username:
+            existing = db.query(User).filter(User.username == new_u).first()
+            if existing and existing.id != user.id:
+                raise HTTPException(
+                    status_code=status.HTTP_400_BAD_REQUEST,
+                    detail="Ce nom d'utilisateur est déjà utilisé par un autre compte."
+                )
+            user.username = new_u
+
+    if len(payload.new_password) < 6:
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail="Le nouveau mot de passe doit contenir au moins 6 caractères."
+        )
+
+    user.hashed_password = hash_password(payload.new_password)
+    db.commit()
+    db.refresh(user)
+
+    token = f"sw_token_{user.id}_{secrets.token_hex(16)}"
+    return {
+        "success": True,
+        "message": "Identifiants mis à jour avec succès !",
+        "user": UserOut.model_validate(user),
+        "token": token
+    }
+

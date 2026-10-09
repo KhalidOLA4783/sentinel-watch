@@ -12,8 +12,8 @@ class LoginScreen extends StatefulWidget {
 class _LoginScreenState extends State<LoginScreen> {
   final ApiService _apiService = ApiService();
 
-  final _usernameController = TextEditingController(text: 'admin');
-  final _passwordController = TextEditingController(text: 'Admin123!');
+  final _usernameController = TextEditingController();
+  final _passwordController = TextEditingController();
   final _fullNameController = TextEditingController();
   final _organizationController = TextEditingController();
   final _serverController = TextEditingController();
@@ -298,7 +298,7 @@ class _LoginScreenState extends State<LoginScreen> {
                           fillColor: const Color(0xFF1E293B),
                           contentPadding: const EdgeInsets.symmetric(horizontal: 12, vertical: 12),
                           border: OutlineInputBorder(borderRadius: BorderRadius.circular(10), borderSide: BorderSide.none),
-                          hintText: 'admin',
+                          hintText: 'Votre identifiant ou email',
                           hintStyle: const TextStyle(color: Colors.white24, fontSize: 13),
                         ),
                       ),
@@ -358,16 +358,6 @@ class _LoginScreenState extends State<LoginScreen> {
                                     ),
                                   ],
                                 ),
-                        ),
-                      ),
-
-                      const SizedBox(height: 12),
-
-                      // Demo credentials tip
-                      Center(
-                        child: Text(
-                          'Compte Administrateur par défaut : admin / Admin123!',
-                          style: TextStyle(color: const Color(0xFF38BDF8).withOpacity(0.8), fontSize: 11),
                         ),
                       ),
                     ],
