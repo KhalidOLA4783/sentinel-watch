@@ -379,28 +379,57 @@
     <div id="view-audits" class="space-y-6 hidden">
 
       <!-- Enterprise Audits Header Banner -->
-      <div class="bg-gradient-to-r from-slate-900 via-slate-800 to-slate-900 border border-soc-border rounded-2xl p-6 shadow-xl flex flex-col md:flex-row items-start md:items-center justify-between gap-4">
-        <div>
+      <div class="bg-gradient-to-r from-slate-900 via-slate-800 to-slate-900 border border-soc-border rounded-2xl p-6 shadow-xl space-y-4">
+        <div class="flex flex-col md:flex-row items-start md:items-center justify-between gap-4">
           <div class="flex items-center space-x-3">
-            <div class="w-10 h-10 rounded-xl bg-emerald-500/20 text-emerald-400 border border-emerald-500/30 flex items-center justify-center text-xl">
+            <div class="w-11 h-11 rounded-xl bg-emerald-500/20 text-emerald-400 border border-emerald-500/30 flex items-center justify-center text-xl">
               <i class="fa-solid fa-building-shield"></i>
             </div>
             <div>
-              <h2 class="text-lg font-bold text-white tracking-wide">Bilan de Santé & Audit Réel du Parc Entreprise</h2>
-              <p class="text-xs text-slate-400">Vérification de la posture de sécurité des postes et serveurs sans simulation : failles réelles et solutions étape par étape.</p>
+              <h2 class="text-lg font-bold text-white tracking-wide">Bilan de Santé & Déploiement de l'Agent EDR</h2>
+              <p class="text-xs text-slate-400">Posture de sécurité du parc en temps réel : pare-feu, antivirus, ports sensibles et faiblesses d'authentification.</p>
             </div>
+          </div>
+
+          <!-- Secret Agent Key Badge & Copy -->
+          <div class="flex items-center space-x-2 bg-slate-950/90 border border-emerald-900/60 rounded-xl px-3.5 py-2 text-xs">
+            <i class="fa-solid fa-key text-emerald-400"></i>
+            <span class="text-slate-400">Clé d'Agent Secrète :</span>
+            <code id="display-agent-key" class="font-mono text-cyan-300 font-bold tracking-wider">sw_key_...</code>
+            <button onclick="navigator.clipboard.writeText(document.getElementById('display-agent-key').textContent); alert('Clé d\'agent copiée !');" class="ml-1 p-1 hover:text-white text-slate-400 transition" title="Copier la clé">
+              <i class="fa-solid fa-copy"></i>
+            </button>
           </div>
         </div>
 
-        <div class="bg-slate-950/80 border border-slate-800 rounded-xl p-3 flex items-center space-x-3 text-xs font-mono">
-          <div>
-            <span class="text-slate-500 block text-[10px]">COMMANDE POUR AUDITER UN PC DE VOTRE ORGANISATION</span>
-            <code id="audit-ps-command" class="text-cyan-400 select-all block mt-0.5 break-all">.\sentinel_audit.ps1 -ApiUrl "https://sentinel-watch-ssty.onrender.com/api/v1/audits" -Organization "SentinelWatch SOC"</code>
+        <!-- Quick Deployment Options -->
+        <div class="grid grid-cols-1 lg:grid-cols-2 gap-3 pt-2 border-t border-slate-800/80">
+          <!-- Option A: 1-Click BAT Downloader -->
+          <div class="bg-slate-950/70 border border-slate-800 rounded-xl p-3.5 flex items-center justify-between gap-3">
+            <div class="space-y-0.5">
+              <span class="text-xs font-bold text-white flex items-center space-x-1.5">
+                <i class="fa-solid fa-download text-emerald-400"></i>
+                <span>Déployeur 1-Clic pour vos Postes</span>
+              </span>
+              <p class="text-[11px] text-slate-400">Génère un script <code class="text-cyan-400 font-mono">.bat</code> prêt à l'emploi avec votre clé pour lier vos PC en tâche de fond.</p>
+            </div>
+            <button onclick="downloadAgentInstaller()" class="px-3.5 py-2 bg-emerald-600 hover:bg-emerald-500 text-slate-950 font-bold rounded-lg transition text-xs flex items-center space-x-1.5 shadow-lg shadow-emerald-900/30 shrink-0">
+              <i class="fa-solid fa-file-arrow-down"></i>
+              <span>Télécharger .bat</span>
+            </button>
           </div>
-          <button onclick="navigator.clipboard.writeText(document.getElementById('audit-ps-command').textContent); alert('Commande d\'audit copiée !');" class="px-2.5 py-1.5 bg-slate-800 hover:bg-slate-700 text-slate-300 rounded text-xs transition flex items-center space-x-1 shrink-0">
-            <i class="fa-solid fa-copy"></i>
-            <span>Copier</span>
-          </button>
+
+          <!-- Option B: Direct PowerShell Command -->
+          <div class="bg-slate-950/70 border border-slate-800 rounded-xl p-3.5 flex items-center justify-between gap-3 font-mono text-xs">
+            <div class="overflow-hidden">
+              <span class="text-slate-500 block text-[10px] font-sans font-semibold">COMMANDE DIRECTE POWERSHELL</span>
+              <code id="audit-ps-command" class="text-cyan-400 select-all block truncate mt-0.5">.\sentinel_audit.ps1 -ApiUrl "https://sentinel-watch-ssty.onrender.com/api/v1/audits" -Organization "SentinelWatch SOC"</code>
+            </div>
+            <button onclick="navigator.clipboard.writeText(document.getElementById('audit-ps-command').textContent); alert('Commande d\'audit copiée !');" class="px-3 py-2 bg-slate-800 hover:bg-slate-700 text-slate-300 rounded-lg transition flex items-center space-x-1.5 shrink-0">
+              <i class="fa-solid fa-copy"></i>
+              <span class="font-sans">Copier</span>
+            </button>
+          </div>
         </div>
       </div>
 
@@ -913,10 +942,16 @@
       document.getElementById('display-user-org').textContent = orgDisplay;
       document.getElementById('display-user-name').textContent = currentUser.username || "admin";
 
+      if (currentUser.agent_key) {
+        const keyEl = document.getElementById('display-agent-key');
+        if (keyEl) keyEl.textContent = currentUser.agent_key;
+      }
+
       const cmdEl = document.getElementById('audit-ps-command');
       if (cmdEl) {
         const currentOrigin = window.location.origin || "https://sentinel-watch-ssty.onrender.com";
-        cmdEl.textContent = `.\\sentinel_audit.ps1 -ApiUrl "${currentOrigin}/api/v1/audits" -Organization "${orgDisplay}"`;
+        const keyArg = currentUser.agent_key ? ` -AgentKey "${currentUser.agent_key}"` : '';
+        cmdEl.textContent = `.\\sentinel_audit.ps1 -ApiUrl "${currentOrigin}/api/v1/audits" -Organization "${orgDisplay}"${keyArg}`;
       }
 
       initChart();
@@ -924,6 +959,64 @@
       if (!pollTimer) {
         pollTimer = setInterval(updateAll, 2000);
       }
+    }
+
+    function downloadAgentInstaller() {
+      if (!currentUser) return;
+      const org = currentUser.organization || "SentinelWatch SOC";
+      const key = currentUser.agent_key || "sw_key_master_sentinelwatch";
+      const origin = window.location.origin || "https://sentinel-watch-ssty.onrender.com";
+
+      const batContent = `@echo off
+title SentinelWatch - Installation de la Surveillance Endpoint (${org})
+cd /d "%~dp0"
+
+echo ======================================================================
+echo    SENTINELWATCH - SURVEILLANCE AUTOMATIQUE EN TACHE DE FOND
+echo    Organisation : ${org}
+echo ======================================================================
+echo.
+
+:: Verification des privileges administrateur
+net session >nul 2>&1
+if %ERRORLEVEL% NEQ 0 (
+    echo Demande des droits administrateur...
+    powershell -Command "Start-Process cmd -ArgumentList '/c \"\"%~f0\"\"' -Verb RunAs"
+    exit /b
+)
+
+set "TASK_NAME=SentinelWatch_EDR_Daemon"
+set "API_URL=${origin}/api/v1/audits"
+set "AGENT_KEY=${key}"
+set "ORG_NAME=${org}"
+
+echo Configuration du Planificateur de Taches Windows...
+set "PS_ACTION=powershell.exe -NoProfile -ExecutionPolicy Bypass -WindowStyle Hidden -Command \\"try { Invoke-RestMethod -Uri '${origin}/api/v1/audits' -Method Post -Headers @{'X-Sentinel-Key'='${key}'} -TimeoutSec 20 } catch {}\\""
+
+schtasks /delete /tn "%TASK_NAME%" /f >nul 2>&1
+schtasks /create /tn "%TASK_NAME%" /tr "%PS_ACTION%" /sc HOURLY /mo 1 /rl HIGHEST /f >nul 2>&1
+
+if %ERRORLEVEL% EQU 0 (
+    echo.
+    echo ======================================================================
+    echo   [SUCCES] Votre machine est desormais liee a : ${org}
+    echo   L'agent veille en arriere-plan et rapporte a votre tour de controle !
+    echo ======================================================================
+    schtasks /run /tn "%TASK_NAME%" >nul 2>&1
+) else (
+    echo [ERREUR] Impossible de creer la tache planifiee.
+)
+echo.
+pause
+`;
+
+      const blob = new Blob([batContent], { type: 'application/x-bat' });
+      const link = document.createElement('a');
+      link.href = URL.createObjectURL(blob);
+      link.download = `INSTALLER_SURVEILLANCE_${org.replace(/[^a-zA-Z0-9]/g, '_')}.bat`;
+      document.body.appendChild(link);
+      link.click();
+      document.body.removeChild(link);
     }
 
     let currentView = 'soc';

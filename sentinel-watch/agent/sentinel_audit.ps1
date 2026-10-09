@@ -7,6 +7,7 @@
 param (
     [string]$ApiUrl = "https://sentinel-watch-ssty.onrender.com/api/v1/audits",
     [string]$Organization = "SentinelWatch SOC",
+    [string]$AgentKey = "",
     [switch]$Standalone = $false
 )
 
@@ -444,6 +445,7 @@ if (-not $Standalone -and -not [string]::IsNullOrWhiteSpace($ApiUrl)) {
         ip_address = $MainIp
         domain_name = $Domain
         organization = $Organization
+        agent_key = $AgentKey
         security_score = [int]$Score
         risk_level = $RiskLevel
         firewall_enabled = [bool]$FirewallOk
@@ -455,8 +457,15 @@ if (-not $Standalone -and -not [string]::IsNullOrWhiteSpace($ApiUrl)) {
     
     $PayloadJson = $PayloadObj | ConvertTo-Json -Depth 5
 
+    $Headers = @{
+        "Content-Type" = "application/json; charset=utf-8"
+    }
+    if (-not [string]::IsNullOrWhiteSpace($AgentKey)) {
+        $Headers["X-Sentinel-Key"] = $AgentKey
+    }
+
     try {
-        $Response = Invoke-RestMethod -Uri $ApiUrl -Method Post -Body $PayloadJson -ContentType "application/json; charset=utf-8" -TimeoutSec 25
+        $Response = Invoke-RestMethod -Uri $ApiUrl -Method Post -Headers $Headers -Body $PayloadJson -TimeoutSec 25
         Write-Host "[OK] Rapport transmis avec succes au SOC SentinelWatch ! (ID Audit: $($Response.id))" -ForegroundColor Green
     } catch {
         Write-Host "[!] Le serveur SentinelWatch n'etait pas joignable ($ApiUrl). Le rapport est affiche ci-dessus en local." -ForegroundColor DarkYellow

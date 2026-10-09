@@ -15,4 +15,5 @@ class User(Base):
     full_name = Column(String(100), nullable=True)
     role = Column(String(20), default="ADMIN", nullable=False)  # ADMIN, ANALYST, OPERATOR
     organization = Column(String(100), default="SentinelWatch SOC", nullable=False)
+    agent_key = Column(String(64), unique=True, index=True, nullable=True)
     created_at = Column(DateTime, default=datetime.utcnow, nullable=False)

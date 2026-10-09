@@ -1,25 +1,36 @@
 from typing import List, Optional
 from datetime import datetime
-from fastapi import APIRouter, Depends, HTTPException, Query, status
+from fastapi import APIRouter, Depends, HTTPException, Query, Request, status
 from sqlalchemy.orm import Session
 from sqlalchemy import desc
 
 from app.database import get_db
 from app.models.audit import AuditReport
 from app.models.alert import Alert
+from app.models.user import User
 from app.schemas.audit import AuditReportIn, AuditReportOut
 
 router = APIRouter(prefix="/audits", tags=["Enterprise Audit & Posture"])
 
 @router.post("", response_model=AuditReportOut, status_code=status.HTTP_201_CREATED)
-def receive_audit_report(report_in: AuditReportIn, db: Session = Depends(get_db)):
+def receive_audit_report(report_in: AuditReportIn, request: Request, db: Session = Depends(get_db)):
     """
     Reçoit le rapport d'audit de sécurité d'un poste ou serveur d'entreprise.
+    Vérifie la clé d'agent (X-Sentinel-Key ou agent_key) pour lier automatiquement l'organisation.
     Stocke les vulnérabilités constatées et génère des alertes si failles critiques.
     """
     findings_data = [item.model_dump() for item in report_in.findings]
 
-    org_name = (report_in.organization or "SentinelWatch SOC").strip()
+    # Authentification et résolution d'organisation via agent_key
+    provided_key = request.headers.get("X-Sentinel-Key") or report_in.agent_key
+    org_name = None
+    if provided_key:
+        matched_user = db.query(User).filter(User.agent_key == provided_key.strip()).first()
+        if matched_user:
+            org_name = matched_user.organization
+
+    if not org_name:
+        org_name = (report_in.organization or "SentinelWatch SOC").strip()
 
     db_report = AuditReport(
         hostname=report_in.hostname,

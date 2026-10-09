@@ -25,6 +25,11 @@ async def lifespan(app: FastAPI):
                 conn.commit()
             except Exception:
                 pass
+        try:
+            conn.execute(text("ALTER TABLE users ADD COLUMN agent_key VARCHAR(64)"))
+            conn.commit()
+        except Exception:
+            pass
 
     seed_default_admin()
     yield

@@ -21,6 +21,7 @@ class UserOut(BaseModel):
     full_name: Optional[str] = None
     role: str
     organization: str
+    agent_key: Optional[str] = None
     created_at: datetime
 
     class Config:

@@ -15,7 +15,7 @@ git status
 echo.
 echo Ajout des fichiers modifies...
 git add .
-git commit -m "feat: portail authentification et cloisonnement multi-organisation"
+git commit -m "feat: portail multi-tenant, cle agent secrete et deployeur 1-clic"
 git push origin main
 
 echo.

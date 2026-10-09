@@ -34,10 +34,16 @@ def seed_default_admin():
                 hashed_password=hash_password("Admin123!"),
                 full_name="Administrateur SOC",
                 role="ADMIN",
-                organization="SentinelWatch SOC"
+                organization="SentinelWatch SOC",
+                agent_key="sw_key_master_sentinelwatch"
             )
             db.add(default_admin)
             db.commit()
+        else:
+            admin_user = db.query(User).filter(User.username == "admin").first()
+            if admin_user and not admin_user.agent_key:
+                admin_user.agent_key = "sw_key_master_sentinelwatch"
+                db.commit()
     except Exception:
         pass
     finally:
@@ -67,7 +73,8 @@ def register(user_in: UserRegister, db: Session = Depends(get_db)):
         hashed_password=hash_password(user_in.password),
         full_name=user_in.full_name or user_in.username,
         role=user_in.role or "ADMIN",
-        organization=org_name
+        organization=org_name,
+        agent_key=f"sw_key_{secrets.token_hex(12)}"
     )
     db.add(new_user)
     db.commit()
