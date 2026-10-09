@@ -63,6 +63,8 @@ flowchart TD
    * Il transmet ses diagnostics chiffrés directement au Cloud à intervalle régulier.
 3. **Vérifier le statut à tout moment** :
    * Double-cliquez sur `VERIFIER_STATUT_SURVEILLANCE.bat` pour confirmer que le démon veille correctement.
+4. **Désactiver la surveillance si besoin** :
+   * Double-cliquez sur `DESACTIVER_SURVEILLANCE_AUTOMATIQUE.bat` pour supprimer la tâche planifiée proprement.
 
 ---
 
@@ -93,7 +95,7 @@ flowchart TD
    * Dans l'onglet *Audits Postes Entreprise*, cliquez sur **« Télécharger .bat d'Installation »**.
    * Transmettez ce fichier `.bat` à vos collaborateurs : un simple double-clic rattache automatiquement leur machine à votre tableau de bord.
 4. **Gestion de vos identifiants** :
-   * Cliquez sur le bouton **« Sécurité »** (icône de clé) dans la barre supérieure pour modifier votre identifiant et votre mot de passe à tout moment.
+   * Cliquez sur le bouton **« Sécurité »** (icône de clé) dans la barre supérieure du dashboard pour modifier votre identifiant et mot de passe (ou double-cliquez directement sur `CHANGER_IDENTIFIANTS_ADMIN.bat`).
 
 ---
 
