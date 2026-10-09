@@ -6,6 +6,7 @@
 
 param (
     [string]$ApiUrl = "https://sentinel-watch-ssty.onrender.com/api/v1/audits",
+    [string]$Organization = "SentinelWatch SOC",
     [switch]$Standalone = $false
 )
 
@@ -442,6 +443,7 @@ if (-not $Standalone -and -not [string]::IsNullOrWhiteSpace($ApiUrl)) {
         os_version = $OsInfo
         ip_address = $MainIp
         domain_name = $Domain
+        organization = $Organization
         security_score = [int]$Score
         risk_level = $RiskLevel
         firewall_enabled = [bool]$FirewallOk

@@ -14,6 +14,7 @@ class AccessLog(Base):
     
     # Identifiant utilisateur (username, email ou session id)
     user_identifier = Column(String(100), nullable=True, default="anonymous", index=True)
+    organization = Column(String(100), default="SentinelWatch SOC", nullable=False, index=True)
     
     # Données réseau & géographiques
     ip_address = Column(String(45), nullable=False, index=True)

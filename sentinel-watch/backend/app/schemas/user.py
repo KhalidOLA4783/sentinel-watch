@@ -8,6 +8,7 @@ class UserRegister(BaseModel):
     password: str
     full_name: Optional[str] = None
     role: Optional[str] = "ADMIN"
+    organization: Optional[str] = "SentinelWatch SOC"
 
 class UserLogin(BaseModel):
     username_or_email: str
@@ -19,6 +20,7 @@ class UserOut(BaseModel):
     email: str
     full_name: Optional[str] = None
     role: str
+    organization: str
     created_at: datetime
 
     class Config:

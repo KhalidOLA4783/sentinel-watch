@@ -19,12 +19,15 @@ def receive_audit_report(report_in: AuditReportIn, db: Session = Depends(get_db)
     """
     findings_data = [item.model_dump() for item in report_in.findings]
 
+    org_name = (report_in.organization or "SentinelWatch SOC").strip()
+
     db_report = AuditReport(
         hostname=report_in.hostname,
         os_version=report_in.os_version,
         ip_address=report_in.ip_address,
         mac_address=report_in.mac_address,
         domain_name=report_in.domain_name,
+        organization=org_name,
         security_score=report_in.security_score,
         risk_level=report_in.risk_level,
         firewall_enabled=report_in.firewall_enabled,
@@ -47,6 +50,7 @@ def receive_audit_report(report_in: AuditReportIn, db: Session = Depends(get_db)
         alert = Alert(
             alert_type="ENDPOINT_SECURITY_FLAW",
             severity="CRITICAL" if report_in.security_score < 50 else "HIGH",
+            organization=org_name,
             source_ip=report_in.ip_address,
             target_user=report_in.hostname,
             description=f"Faiblesses critiques sur {report_in.hostname} (Score: {report_in.security_score}/100) : {reasons}",
@@ -64,10 +68,13 @@ def get_audit_reports(
     db: Session = Depends(get_db),
     limit: int = Query(50, ge=1, le=100),
     hostname: Optional[str] = None,
-    risk_level: Optional[str] = None
+    risk_level: Optional[str] = None,
+    organization: Optional[str] = None
 ):
     """Récupère l'historique des audits de machines d'entreprise."""
     query = db.query(AuditReport)
+    if organization:
+        query = query.filter(AuditReport.organization == organization)
     if hostname:
         query = query.filter(AuditReport.hostname.ilike(f"%{hostname}%"))
     if risk_level:

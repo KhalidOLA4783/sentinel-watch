@@ -33,7 +33,8 @@ def seed_default_admin():
                 email="admin@sentinelwatch.com",
                 hashed_password=hash_password("Admin123!"),
                 full_name="Administrateur SOC",
-                role="ADMIN"
+                role="ADMIN",
+                organization="SentinelWatch SOC"
             )
             db.add(default_admin)
             db.commit()
@@ -44,7 +45,7 @@ def seed_default_admin():
 
 @router.post("/register", response_model=AuthResponse, status_code=status.HTTP_201_CREATED)
 def register(user_in: UserRegister, db: Session = Depends(get_db)):
-    """Création d'un nouveau compte utilisateur ou analyste SOC."""
+    """Création d'un nouveau compte utilisateur ou analyste SOC avec son organisation."""
     # Vérification unicité username
     if db.query(User).filter(User.username == user_in.username).first():
         raise HTTPException(
@@ -58,12 +59,15 @@ def register(user_in: UserRegister, db: Session = Depends(get_db)):
             detail="Cette adresse email est déjà enregistrée."
         )
 
+    org_name = (user_in.organization or f"SOC {user_in.username}").strip()
+
     new_user = User(
         username=user_in.username.strip(),
         email=user_in.email.strip().lower(),
         hashed_password=hash_password(user_in.password),
         full_name=user_in.full_name or user_in.username,
-        role=user_in.role or "ANALYST"
+        role=user_in.role or "ADMIN",
+        organization=org_name
     )
     db.add(new_user)
     db.commit()

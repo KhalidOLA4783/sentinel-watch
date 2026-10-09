@@ -19,6 +19,7 @@ class AuditReportIn(BaseModel):
     ip_address: str
     mac_address: Optional[str] = None
     domain_name: Optional[str] = None
+    organization: Optional[str] = "SentinelWatch SOC"
     security_score: int = Field(..., ge=0, le=100)
     risk_level: str
     firewall_enabled: bool = True

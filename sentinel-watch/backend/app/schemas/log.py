@@ -6,6 +6,7 @@ class AccessLogIn(BaseModel):
     """Schéma d'entrée pour l'ingestion d'un journal d'accès."""
     timestamp: Optional[datetime] = Field(default_factory=datetime.utcnow, description="Horodatage UTC")
     user_identifier: Optional[str] = Field(default="anonymous", description="Nom d'utilisateur ou ID")
+    organization: Optional[str] = Field(default="SentinelWatch SOC", description="Organisation / Tenant")
     ip_address: str = Field(..., description="Adresse IPv4 ou IPv6")
     country_code: Optional[str] = Field(None, description="Code pays ISO-2 (ex: FR, US)")
     city: Optional[str] = Field(None, description="Nom de la ville")

@@ -18,6 +18,7 @@ class AuditReport(Base):
     ip_address = Column(String(45), nullable=False)
     mac_address = Column(String(50), nullable=True)
     domain_name = Column(String(100), nullable=True)          # Ex: "WORKGROUP" ou "ENTREPRISE.LOCAL"
+    organization = Column(String(100), default="SentinelWatch SOC", nullable=False, index=True)
     
     # Évaluation globale
     security_score = Column(Integer, nullable=False)          # Score de 0 à 100

@@ -14,4 +14,5 @@ class User(Base):
     hashed_password = Column(String(128), nullable=False)
     full_name = Column(String(100), nullable=True)
     role = Column(String(20), default="ADMIN", nullable=False)  # ADMIN, ANALYST, OPERATOR
+    organization = Column(String(100), default="SentinelWatch SOC", nullable=False)
     created_at = Column(DateTime, default=datetime.utcnow, nullable=False)

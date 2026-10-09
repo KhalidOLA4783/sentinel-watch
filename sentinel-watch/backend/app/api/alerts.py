@@ -17,10 +17,13 @@ def get_alerts(
     offset: int = Query(0, ge=0),
     status: Optional[str] = None,
     severity: Optional[str] = None,
-    alert_type: Optional[str] = None
+    alert_type: Optional[str] = None,
+    organization: Optional[str] = None
 ):
     """Liste paginée des alertes de sécurité avec filtres."""
     query = db.query(Alert)
+    if organization:
+        query = query.filter(Alert.organization == organization)
     if status:
         query = query.filter(Alert.status == status.upper())
     if severity:

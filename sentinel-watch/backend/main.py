@@ -10,10 +10,22 @@ from app.api.alerts import router as alerts_router
 from app.models.user import User
 from app.api.auth import router as auth_router, seed_default_admin
 
+from sqlalchemy import text
+
 @asynccontextmanager
 async def lifespan(app: FastAPI):
     # Démarrage : Création automatique des tables dans la base SQLite / Postgres
     Base.metadata.create_all(bind=engine)
+    
+    # Migration automatique transparente pour ajouter la colonne organization si les tables existent déjà
+    with engine.connect() as conn:
+        for tbl in ["users", "audit_reports", "alerts", "access_logs"]:
+            try:
+                conn.execute(text(f"ALTER TABLE {tbl} ADD COLUMN organization VARCHAR(100) DEFAULT 'SentinelWatch SOC'"))
+                conn.commit()
+            except Exception:
+                pass
+
     seed_default_admin()
     yield
     # Arrêt si nécessaire

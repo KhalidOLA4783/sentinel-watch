@@ -7,11 +7,15 @@ echo    SENTINELWATCH - SAUVEGARDE ET SYNCHRONISATION GITHUB
 echo ======================================================================
 echo.
 
+if exist "sentinel-watch\.git" (
+    cd sentinel-watch
+)
+
 git status
 echo.
 echo Ajout des fichiers modifies...
 git add .
-git commit -m "feat: surveillance automatique en arriere-plan et cloud endpoint mobile"
+git commit -m "feat: portail authentification et cloisonnement multi-organisation"
 git push origin main
 
 echo.

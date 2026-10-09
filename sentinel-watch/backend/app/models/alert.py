@@ -18,6 +18,7 @@ class Alert(Base):
     
     # Gravité : LOW, MEDIUM, HIGH, CRITICAL
     severity = Column(String(20), nullable=False, default="MEDIUM", index=True)
+    organization = Column(String(100), default="SentinelWatch SOC", nullable=False, index=True)
     
     # Cible & source
     source_ip = Column(String(45), nullable=False, index=True)
