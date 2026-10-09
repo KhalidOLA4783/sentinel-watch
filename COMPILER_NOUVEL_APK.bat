@@ -7,8 +7,10 @@ echo    SENTINELWATCH - COMPILATION DU NOUVEL APK (AVEC CONNEXION)
 echo ======================================================================
 echo.
 echo [1/3] Configuration de l'environnement Java OpenJDK 17...
-set "JAVA_HOME=C:\Program Files\Microsoft\jdk-17.0.20.101-hotspot"
-set "PATH=%JAVA_HOME%\bin;%PATH%"
+if exist "C:\Program Files\Microsoft\jdk-17.0.20.101-hotspot" (
+    set "JAVA_HOME=C:\Program Files\Microsoft\jdk-17.0.20.101-hotspot"
+    set "PATH=%JAVA_HOME%\bin;%PATH%"
+)
 
 echo.
 echo [2/3] Compilation Flutter APK Release en cours...

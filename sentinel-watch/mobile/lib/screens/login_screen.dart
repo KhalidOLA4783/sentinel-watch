@@ -15,6 +15,7 @@ class _LoginScreenState extends State<LoginScreen> {
   final _usernameController = TextEditingController(text: 'admin');
   final _passwordController = TextEditingController(text: 'Admin123!');
   final _fullNameController = TextEditingController();
+  final _organizationController = TextEditingController();
   final _serverController = TextEditingController();
 
   bool _isRegisterMode = false;
@@ -33,6 +34,7 @@ class _LoginScreenState extends State<LoginScreen> {
     _usernameController.dispose();
     _passwordController.dispose();
     _fullNameController.dispose();
+    _organizationController.dispose();
     _serverController.dispose();
     super.dispose();
   }
@@ -59,6 +61,7 @@ class _LoginScreenState extends State<LoginScreen> {
         '$identifier@sentinelwatch.com',
         password,
         fullName: _fullNameController.text.trim(),
+        organization: _organizationController.text.trim().isNotEmpty ? _organizationController.text.trim() : null,
         serverUrl: serverUrl,
       );
     } else {
@@ -244,7 +247,7 @@ class _LoginScreenState extends State<LoginScreen> {
 
                       const SizedBox(height: 14),
 
-                      // Full name if registering
+                      // Full name and Organization if registering
                       if (_isRegisterMode) ...[
                         const Text('NOM COMPLET', style: TextStyle(color: Color(0xFF64748B), fontSize: 10, fontWeight: FontWeight.bold)),
                         const SizedBox(height: 6),
@@ -258,6 +261,22 @@ class _LoginScreenState extends State<LoginScreen> {
                             contentPadding: const EdgeInsets.symmetric(horizontal: 12, vertical: 12),
                             border: OutlineInputBorder(borderRadius: BorderRadius.circular(10), borderSide: BorderSide.none),
                             hintText: 'Ex: Khaled - Administrateur',
+                            hintStyle: const TextStyle(color: Colors.white24, fontSize: 13),
+                          ),
+                        ),
+                        const SizedBox(height: 14),
+                        const Text('NOM DE VOTRE ORGANISATION / ENTREPRISE', style: TextStyle(color: Color(0xFF64748B), fontSize: 10, fontWeight: FontWeight.bold)),
+                        const SizedBox(height: 6),
+                        TextField(
+                          controller: _organizationController,
+                          style: const TextStyle(color: Colors.white, fontSize: 13),
+                          decoration: InputDecoration(
+                            prefixIcon: const Icon(Icons.business_rounded, color: Color(0xFF64748B), size: 18),
+                            filled: true,
+                            fillColor: const Color(0xFF1E293B),
+                            contentPadding: const EdgeInsets.symmetric(horizontal: 12, vertical: 12),
+                            border: OutlineInputBorder(borderRadius: BorderRadius.circular(10), borderSide: BorderSide.none),
+                            hintText: 'Ex: Mon Entreprise SOC (Optionnel)',
                             hintStyle: const TextStyle(color: Colors.white24, fontSize: 13),
                           ),
                         ),

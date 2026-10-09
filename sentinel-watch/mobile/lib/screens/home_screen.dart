@@ -367,6 +367,13 @@ class _HomeScreenState extends State<HomeScreen> {
                           _apiService.currentUser?.username ?? 'admin',
                           style: const TextStyle(color: Colors.white, fontSize: 11, fontWeight: FontWeight.bold),
                         ),
+                        if (_apiService.currentUser?.organization != null && _apiService.currentUser!.organization!.isNotEmpty) ...[
+                          const SizedBox(width: 6),
+                          Text(
+                            '• ${_apiService.currentUser!.organization}',
+                            style: const TextStyle(color: Color(0xFF38BDF8), fontSize: 10, fontWeight: FontWeight.w600),
+                          ),
+                        ],
                       ],
                     ),
                   ),

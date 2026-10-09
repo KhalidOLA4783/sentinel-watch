@@ -55,7 +55,7 @@ class ApiService {
   }
 
   /// Création d'un nouveau compte utilisateur / analyste
-  Future<Map<String, dynamic>> register(String username, String email, String password, {String? fullName, String? serverUrl}) async {
+  Future<Map<String, dynamic>> register(String username, String email, String password, {String? fullName, String? organization, String? serverUrl}) async {
     if (serverUrl != null && serverUrl.isNotEmpty) {
       setBaseUrl(serverUrl);
     }
@@ -69,7 +69,8 @@ class ApiService {
           'email': email.trim().toLowerCase(),
           'password': password,
           'full_name': fullName ?? username,
-          'role': 'ANALYST',
+          'role': 'ADMIN',
+          if (organization != null && organization.isNotEmpty) 'organization': organization.trim(),
         }),
       ).timeout(const Duration(seconds: 25));
 
@@ -95,7 +96,11 @@ class ApiService {
   /// Récupère les métadonnées globales de sécurité
   Future<SystemStats> fetchStats() async {
     try {
-      final response = await http.get(Uri.parse('$baseUrl/logs/stats')).timeout(
+      String url = '$baseUrl/logs/stats';
+      if (currentUser?.organization != null && currentUser!.organization!.isNotEmpty) {
+        url += '?organization=${Uri.encodeComponent(currentUser!.organization!)}';
+      }
+      final response = await http.get(Uri.parse(url)).timeout(
         const Duration(seconds: 15),
       );
       if (response.statusCode == 200) {
@@ -112,6 +117,9 @@ class ApiService {
       String url = '$baseUrl/alerts?limit=$limit';
       if (status != null && status.isNotEmpty) {
         url += '&status=$status';
+      }
+      if (currentUser?.organization != null && currentUser!.organization!.isNotEmpty) {
+        url += '&organization=${Uri.encodeComponent(currentUser!.organization!)}';
       }
       final response = await http.get(Uri.parse(url)).timeout(
         const Duration(seconds: 15),
