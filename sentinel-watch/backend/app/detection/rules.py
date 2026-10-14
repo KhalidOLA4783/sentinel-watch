@@ -77,6 +77,7 @@ def check_impossible_travel(db: Session, current_log: AccessLog) -> Optional[Ale
             return Alert(
                 alert_type="IMPOSSIBLE_TRAVEL",
                 severity="CRITICAL",
+                organization=getattr(current_log, "organization", "SentinelWatch SOC") or "SentinelWatch SOC",
                 source_ip=current_log.ip_address,
                 target_user=current_log.user_identifier,
                 description=desc_text,
@@ -121,6 +122,7 @@ def check_bruteforce(db: Session, current_log: AccessLog) -> Optional[Alert]:
             return Alert(
                 alert_type="BRUTE_FORCE",
                 severity=severity,
+                organization=getattr(current_log, "organization", "SentinelWatch SOC") or "SentinelWatch SOC",
                 source_ip=current_log.ip_address,
                 target_user=current_log.user_identifier,
                 description=desc_text,
@@ -162,6 +164,7 @@ def check_recon_scan(db: Session, current_log: AccessLog) -> Optional[Alert]:
             return Alert(
                 alert_type="RECON_SCAN",
                 severity="HIGH",
+                organization=getattr(current_log, "organization", "SentinelWatch SOC") or "SentinelWatch SOC",
                 source_ip=current_log.ip_address,
                 target_user=current_log.user_identifier,
                 description=desc_text,

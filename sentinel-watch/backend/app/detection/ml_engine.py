@@ -114,6 +114,7 @@ class MLAnomalyDetector:
                 return Alert(
                     alert_type="ML_ANOMALY",
                     severity="MEDIUM",
+                    organization=getattr(log, "organization", "SentinelWatch SOC") or "SentinelWatch SOC",
                     source_ip=log.ip_address,
                     target_user=log.user_identifier,
                     description=desc_text,

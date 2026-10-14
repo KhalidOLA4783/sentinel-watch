@@ -28,6 +28,7 @@ class DetectionEngine:
             alert = Alert(
                 alert_type="BLACKLISTED_TRAFFIC",
                 severity="CRITICAL",
+                organization=getattr(log, "organization", "SentinelWatch SOC") or "SentinelWatch SOC",
                 source_ip=log.ip_address,
                 target_user=log.user_identifier,
                 description=f"Tentative d'accès depuis une adresse IP bannie ({log.ip_address}). Motif de bannissement : {blacklisted.reason}",

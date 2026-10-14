@@ -65,7 +65,7 @@ class _HomeScreenState extends State<HomeScreen> {
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
             const Text(
-              'Indiquez l\'adresse de votre API SentinelWatch :\n• 10.0.2.2:8000 pour émulateur Android\n• 127.0.0.1:8000 pour Windows/Desktop\n• 192.168.X.X:8000 pour smartphone en Wi-Fi',
+              'Indiquez l\'adresse de votre API SentinelWatch :\n• Par défaut : Cloud Render (accessible partout 24h/24)\n• Ou votre propre serveur privé / IP locale',
               style: TextStyle(color: Color(0xFF94A3B8), fontSize: 12),
             ),
             const SizedBox(height: 12),
@@ -76,7 +76,7 @@ class _HomeScreenState extends State<HomeScreen> {
                 filled: true,
                 fillColor: Color(0xFF1E293B),
                 border: OutlineInputBorder(),
-                hintText: 'http://10.0.2.2:8000/api/v1',
+                hintText: 'https://sentinel-watch-ssty.onrender.com/api/v1',
                 hintStyle: TextStyle(color: Colors.white38),
               ),
             ),

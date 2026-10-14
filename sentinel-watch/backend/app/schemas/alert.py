@@ -5,6 +5,7 @@ from pydantic import BaseModel, Field
 class AlertBase(BaseModel):
     alert_type: str
     severity: str
+    organization: Optional[str] = "SentinelWatch SOC"
     source_ip: str
     target_user: Optional[str] = None
     description: str

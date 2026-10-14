@@ -94,9 +94,11 @@ def login(creds: UserLogin, request: Request, db: Session = Depends(get_db)):
 
     if not user or not verify_password(creds.password, user.hashed_password):
         # Enregistrement de l'échec d'authentification dans les logs de sécurité
+        failed_org = user.organization if (user and user.organization) else "SentinelWatch SOC"
         failed_log = AccessLog(
             timestamp=datetime.utcnow(),
             user_identifier=identifier or "unknown",
+            organization=failed_org,
             ip_address=client_ip,
             http_method="POST",
             endpoint="/api/v1/auth/login",
@@ -119,6 +121,7 @@ def login(creds: UserLogin, request: Request, db: Session = Depends(get_db)):
     success_log = AccessLog(
         timestamp=datetime.utcnow(),
         user_identifier=user.username,
+        organization=user.organization or "SentinelWatch SOC",
         ip_address=client_ip,
         http_method="POST",
         endpoint="/api/v1/auth/login",

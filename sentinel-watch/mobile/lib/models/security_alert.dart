@@ -3,6 +3,7 @@ class SecurityAlert {
   final DateTime timestamp;
   final String alertType;
   final String severity;
+  final String? organization;
   final String sourceIp;
   final String? targetUser;
   final String description;
@@ -16,6 +17,7 @@ class SecurityAlert {
     required this.timestamp,
     required this.alertType,
     required this.severity,
+    this.organization,
     required this.sourceIp,
     this.targetUser,
     required this.description,
@@ -31,6 +33,7 @@ class SecurityAlert {
       timestamp: DateTime.parse(json['timestamp'] as String),
       alertType: json['alert_type'] as String? ?? 'UNKNOWN',
       severity: json['severity'] as String? ?? 'MEDIUM',
+      organization: json['organization'] as String?,
       sourceIp: json['source_ip'] as String? ?? '0.0.0.0',
       targetUser: json['target_user'] as String?,
       description: json['description'] as String? ?? '',
