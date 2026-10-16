@@ -18,7 +18,7 @@ git add -A
 
 echo.
 echo [2/3] Creation du commit...
-git commit -m "fix(db): support postgresql Render connection url and persistent admin credentials"
+git commit -m "fix(db): add psycopg driver and force postgresql+psycopg2 dialect for Render PostgreSQL"
 
 echo.
 echo [3/3] Envoi vers GitHub (git push origin main)...

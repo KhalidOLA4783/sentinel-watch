@@ -14,24 +14,43 @@ from sqlalchemy import text
 
 @asynccontextmanager
 async def lifespan(app: FastAPI):
-    # Démarrage : Création automatique des tables dans la base SQLite / Postgres
-    Base.metadata.create_all(bind=engine)
-    
-    # Migration automatique transparente pour ajouter la colonne organization si les tables existent déjà
-    with engine.connect() as conn:
-        for tbl in ["users", "audit_reports", "alerts", "access_logs"]:
-            try:
-                conn.execute(text(f"ALTER TABLE {tbl} ADD COLUMN organization VARCHAR(100) DEFAULT 'SentinelWatch SOC'"))
-                conn.commit()
-            except Exception:
-                pass
+    import time
+    # Démarrage résilient : création des tables avec tentatives multiples
+    db_ok = False
+    for attempt in range(1, 6):
         try:
-            conn.execute(text("ALTER TABLE users ADD COLUMN agent_key VARCHAR(64)"))
-            conn.commit()
-        except Exception:
-            pass
+            Base.metadata.create_all(bind=engine)
+            db_ok = True
+            print(f"[OK] Connexion et tables initialisees avec succes (tentative {attempt}).")
+            break
+        except Exception as e:
+            print(f"[!] Tentative {attempt}/5 de connexion DB echouee: {e}")
+            time.sleep(2)
 
-    seed_default_admin()
+    if db_ok:
+        try:
+            with engine.connect() as conn:
+                for tbl in ["users", "audit_reports", "alerts", "access_logs"]:
+                    try:
+                        conn.execute(text(f"ALTER TABLE {tbl} ADD COLUMN organization VARCHAR(100) DEFAULT 'SentinelWatch SOC'"))
+                        conn.commit()
+                    except Exception:
+                        pass
+                try:
+                    conn.execute(text("ALTER TABLE users ADD COLUMN agent_key VARCHAR(64)"))
+                    conn.commit()
+                except Exception:
+                    pass
+        except Exception as e:
+            print(f"[!] Avertissement migrations transparentes: {e}")
+
+        try:
+            seed_default_admin()
+        except Exception as e:
+            print(f"[!] Avertissement seed administrateur: {e}")
+    else:
+        print("[CRITICAL] Impossible de se connecter a la base configuree apres 5 tentatives. Mode degrade actif.")
+
     yield
     # Arrêt si nécessaire
 
