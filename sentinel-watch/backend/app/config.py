@@ -8,6 +8,13 @@ class Settings(BaseSettings):
     DATABASE_URL: str = os.getenv("DATABASE_URL", "sqlite:///./sentinelwatch.db")
     DEBUG: bool = os.getenv("DEBUG", "True").lower() == "true"
 
+    # Identifiants sécurisés de l'administrateur (surchargeables via variables d'environnement sur Render)
+    ADMIN_USERNAME: str = os.getenv("ADMIN_USERNAME", "khaled.saroukou")
+    ADMIN_PASSWORD: str = os.getenv("ADMIN_PASSWORD", "Khaled@SentinelWatch2026!")
+    ADMIN_EMAIL: str = os.getenv("ADMIN_EMAIL", "khaled.saroukou@sentinelwatch.com")
+    ADMIN_FULL_NAME: str = os.getenv("ADMIN_FULL_NAME", "Khaled SAROUKOU")
+    ADMIN_ORGANIZATION: str = os.getenv("ADMIN_ORGANIZATION", "SentinelWatch SOC")
+
     class Config:
         case_sensitive = True
 

@@ -1,15 +1,28 @@
+databases:
+  - name: sentinel-db
+    databaseName: sentinelwatch
+    user: sentinel
+    plan: free
+
 services:
   - type: web
     name: sentinel-watch
-    runtime: python
-    rootDir: backend
-    buildCommand: pip install -r requirements.txt
-    startCommand: uvicorn main:app --host 0.0.0.0 --port $PORT
+    runtime: docker
+    dockerfilePath: ./backend/Dockerfile
+    dockerContext: ./backend
     plan: free
-    autoDeploy: true
-    healthCheckPath: /health
     envVars:
-      - key: PYTHON_VERSION
-        value: 3.11.8
-      - key: DEBUG
-        value: "false"
+      - key: DATABASE_URL
+        fromDatabase:
+          name: sentinel-db
+          property: connectionString
+      - key: ADMIN_USERNAME
+        value: khaled.saroukou
+      - key: ADMIN_PASSWORD
+        value: Khaled@SentinelWatch2026!
+      - key: ADMIN_EMAIL
+        value: khaled.saroukou@sentinelwatch.com
+      - key: ADMIN_FULL_NAME
+        value: Khaled SAROUKOU
+      - key: ADMIN_ORGANIZATION
+        value: SentinelWatch SOC

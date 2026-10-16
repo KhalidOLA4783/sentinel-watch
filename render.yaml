@@ -1,0 +1,28 @@
+databases:
+  - name: sentinel-db
+    databaseName: sentinelwatch
+    user: sentinel
+    plan: free
+
+services:
+  - type: web
+    name: sentinel-watch
+    runtime: docker
+    dockerfilePath: ./sentinel-watch/backend/Dockerfile
+    dockerContext: ./sentinel-watch/backend
+    plan: free
+    envVars:
+      - key: DATABASE_URL
+        fromDatabase:
+          name: sentinel-db
+          property: connectionString
+      - key: ADMIN_USERNAME
+        value: khaled.saroukou
+      - key: ADMIN_PASSWORD
+        value: Khaled@SentinelWatch2026!
+      - key: ADMIN_EMAIL
+        value: khaled.saroukou@sentinelwatch.com
+      - key: ADMIN_FULL_NAME
+        value: Khaled SAROUKOU
+      - key: ADMIN_ORGANIZATION
+        value: SentinelWatch SOC

@@ -25,24 +25,33 @@ def verify_password(plain_password: str, hashed_password: str) -> bool:
 
 def seed_default_admin():
     """Crée l'administrateur par défaut si aucun compte n'existe encore."""
+    from app.config import settings
     db = SessionLocal()
     try:
         if db.query(User).count() == 0:
             default_admin = User(
-                username="admin",
-                email="admin@sentinelwatch.com",
-                hashed_password=hash_password("Admin123!"),
-                full_name="Administrateur SOC",
+                username=settings.ADMIN_USERNAME,
+                email=settings.ADMIN_EMAIL,
+                hashed_password=hash_password(settings.ADMIN_PASSWORD),
+                full_name=settings.ADMIN_FULL_NAME,
                 role="ADMIN",
-                organization="SentinelWatch SOC",
+                organization=settings.ADMIN_ORGANIZATION,
                 agent_key="sw_key_master_sentinelwatch"
             )
             db.add(default_admin)
             db.commit()
         else:
-            admin_user = db.query(User).filter(User.username == "admin").first()
-            if admin_user and not admin_user.agent_key:
-                admin_user.agent_key = "sw_key_master_sentinelwatch"
+            admin_user = db.query(User).filter(
+                (User.username == settings.ADMIN_USERNAME) | (User.username == "admin")
+            ).first()
+            if admin_user:
+                if not admin_user.agent_key:
+                    admin_user.agent_key = "sw_key_master_sentinelwatch"
+                if admin_user.username == "admin" and settings.ADMIN_USERNAME != "admin":
+                    admin_user.username = settings.ADMIN_USERNAME
+                    admin_user.email = settings.ADMIN_EMAIL
+                    admin_user.hashed_password = hash_password(settings.ADMIN_PASSWORD)
+                    admin_user.full_name = settings.ADMIN_FULL_NAME
                 db.commit()
     except Exception:
         pass
