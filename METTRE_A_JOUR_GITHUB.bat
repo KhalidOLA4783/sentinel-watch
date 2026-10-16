@@ -18,7 +18,7 @@ git add -A
 
 echo.
 echo [2/3] Creation du commit...
-git commit -m "docs & feat: v0.3 - integration des 4 methodes autonomes, nouveau README et durcissement securite"
+git commit -m "fix(db): support postgresql Render connection url and persistent admin credentials"
 
 echo.
 echo [3/3] Envoi vers GitHub (git push origin main)...
