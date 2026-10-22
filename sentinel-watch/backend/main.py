@@ -47,6 +47,8 @@ app.include_router(logs_router, prefix=settings.API_V1_PREFIX)
 app.include_router(alerts_router, prefix=settings.API_V1_PREFIX)
 from app.api.audits import router as audits_router
 app.include_router(audits_router, prefix=settings.API_V1_PREFIX)
+from app.api.ws import router as ws_router
+app.include_router(ws_router, prefix=settings.API_V1_PREFIX)
 
 import os
 from fastapi.responses import HTMLResponse

@@ -51,4 +51,5 @@ class BlacklistedIP(Base):
     ip_address = Column(String(45), unique=True, nullable=False, index=True)
     reason = Column(String(255), nullable=False)
     blocked_at = Column(DateTime, default=datetime.utcnow, nullable=False)
+    expires_at = Column(DateTime, nullable=True, index=True)  # TTL d'exclusion temporaire
     is_active = Column(Boolean, default=True, index=True)

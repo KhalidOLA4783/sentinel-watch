@@ -8,6 +8,8 @@ from app.database import get_db
 from app.models.log import AccessLog
 from app.schemas.log import AccessLogIn, AccessLogBatchIn, AccessLogOut, LogStats
 from app.detection.engine import detection_engine
+from app.core.websocket import ws_manager
+import asyncio
 
 router = APIRouter(prefix="/logs", tags=["Logs & Ingestion"])
 
@@ -38,8 +40,40 @@ def ingest_log(log_in: AccessLogIn, db: Session = Depends(get_db)):
     db.refresh(db_log)
 
     # Analyse de sécurité en temps réel
-    detection_engine.analyze_log(db, db_log)
+    alert = detection_engine.analyze_log(db, db_log)
     db.refresh(db_log)
+
+    # Diffusion temps réel via WebSocket pour mise à jour instantanée du SOC (< 50ms)
+    try:
+        loop = asyncio.get_event_loop()
+        if loop.is_running():
+            asyncio.create_task(ws_manager.broadcast("NEW_LOG", {
+                "id": db_log.id,
+                "timestamp": db_log.timestamp.isoformat(),
+                "ip_address": db_log.ip_address,
+                "user_identifier": db_log.user_identifier,
+                "endpoint": db_log.endpoint,
+                "http_status": db_log.http_status,
+                "country_code": db_log.country_code,
+                "city": db_log.city,
+                "latitude": db_log.latitude,
+                "longitude": db_log.longitude,
+                "is_flagged": db_log.is_flagged,
+                "flag_reason": db_log.flag_reason
+            }))
+            if alert:
+                asyncio.create_task(ws_manager.broadcast("NEW_ALERT", {
+                    "id": alert.id,
+                    "timestamp": alert.timestamp.isoformat(),
+                    "alert_type": alert.alert_type,
+                    "severity": alert.severity,
+                    "source_ip": alert.source_ip,
+                    "target_user": alert.target_user,
+                    "description": alert.description,
+                    "status": alert.status
+                }))
+    except Exception:
+        pass
 
     return db_log
 
@@ -123,3 +157,40 @@ def get_log_stats(db: Session = Depends(get_db)):
         flagged_logs=flagged,
         recent_activity_count=recent
     )
+
+@router.get("/geo-attacks")
+def get_geo_attack_vectors(db: Session = Depends(get_db)):
+    """
+    Retourne les vecteurs d'attaques géo-localisés récents pour alimenter la Attack Map.
+    Lie l'emplacement de l'attaquant au datacenter défendu.
+    """
+    from app.config import settings
+    # 30 derniers logs avec coordonnées GPS
+    logs = db.query(AccessLog).filter(
+        AccessLog.latitude.isnot(None),
+        AccessLog.longitude.isnot(None)
+    ).order_by(desc(AccessLog.timestamp)).limit(40).all()
+
+    target = {
+        "name": settings.DEFENDED_NAME,
+        "lat": settings.DEFENDED_LAT,
+        "lon": settings.DEFENDED_LON
+    }
+
+    vectors = []
+    for l in logs:
+        vectors.append({
+            "id": l.id,
+            "timestamp": l.timestamp.isoformat(),
+            "source_ip": l.ip_address,
+            "country_code": l.country_code or "UN",
+            "city": l.city or "Inconnu",
+            "source_lat": l.latitude,
+            "source_lon": l.longitude,
+            "target": target,
+            "is_flagged": l.is_flagged,
+            "flag_reason": l.flag_reason,
+            "http_status": l.http_status
+        })
+
+    return {"target": target, "vectors": vectors}

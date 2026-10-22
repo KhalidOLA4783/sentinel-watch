@@ -29,12 +29,14 @@ class AlertOut(AlertBase):
 class BlacklistCreate(BaseModel):
     ip_address: str
     reason: str
+    duration_minutes: Optional[int] = None  # None = définitif, sinon durée en minutes
 
 class BlacklistOut(BaseModel):
     id: int
     ip_address: str
     reason: str
     blocked_at: datetime
+    expires_at: Optional[datetime] = None
     is_active: bool
 
     class Config:

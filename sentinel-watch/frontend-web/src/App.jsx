@@ -1,11 +1,12 @@
 import React, { useState, useEffect } from 'react';
 import { 
   Shield, Server, AlertTriangle, Lock, Ban, 
-  BookOpen, ListCheck, ShieldAlert, Unlock, Activity 
+  BookOpen, ListCheck, ShieldAlert, Unlock, Activity, Wifi
 } from 'lucide-react';
 import MetricCard from './components/MetricCard';
 import AlertItem from './components/AlertItem';
 import LogsTable from './components/LogsTable';
+import AttackMap from './components/AttackMap';
 
 const API_BASE = '/api/v1';
 
@@ -23,23 +24,27 @@ export default function App() {
   const [alerts, setAlerts] = useState([]);
   const [logs, setLogs] = useState([]);
   const [blacklist, setBlacklist] = useState([]);
+  const [geoData, setGeoData] = useState({ target: { name: "HQ DataCenter Paris", lat: 48.8566, lon: 2.3522 }, vectors: [] });
+  const [wsConnected, setWsConnected] = useState(false);
   const [lastSync, setLastSync] = useState(new Date().toLocaleTimeString());
 
   const fetchData = async () => {
     try {
       setLastSync(new Date().toLocaleTimeString());
       const headers = getAuthHeaders();
-      const [resStats, resAlerts, resLogs, resBlacklist] = await Promise.all([
+      const [resStats, resAlerts, resLogs, resBlacklist, resGeo] = await Promise.all([
         fetch(`${API_BASE}/logs/stats`, { headers }),
         fetch(`${API_BASE}/alerts?limit=30`, { headers }),
         fetch(`${API_BASE}/logs?limit=20`, { headers }),
-        fetch(`${API_BASE}/blacklist`, { headers })
+        fetch(`${API_BASE}/blacklist`, { headers }),
+        fetch(`${API_BASE}/logs/geo-attacks`, { headers })
       ]);
 
       if (resStats.ok) setStats(await resStats.json());
       if (resAlerts.ok) setAlerts(await resAlerts.json());
       if (resLogs.ok) setLogs(await resLogs.json());
       if (resBlacklist.ok) setBlacklist(await resBlacklist.json());
+      if (resGeo.ok) setGeoData(await resGeo.json());
     } catch (err) {
       console.error("Erreur de synchronisation API:", err);
     }
@@ -47,8 +52,52 @@ export default function App() {
 
   useEffect(() => {
     fetchData();
-    const interval = setInterval(fetchData, 2500);
-    return () => clearInterval(interval);
+
+    // Connexion WebSocket pour le flux en direct (< 50ms)
+    const protocol = window.location.protocol === 'https:' ? 'wss:' : 'ws:';
+    const host = window.location.host;
+    const token = localStorage.getItem('sw_auth_token');
+    const wsUrl = `${protocol}//${host}/api/v1/ws/live${token ? `?token=${token}` : ''}`;
+
+    let socket;
+    try {
+      socket = new WebSocket(wsUrl);
+      socket.onopen = () => setWsConnected(true);
+      socket.onclose = () => setWsConnected(false);
+      socket.onmessage = (event) => {
+        try {
+          const payload = JSON.parse(event.data);
+          if (payload.event === "NEW_LOG") {
+            setLogs(prev => [payload.data, ...prev.slice(0, 19)]);
+            setStats(prev => ({ ...prev, total_logs: prev.total_logs + 1, recent_activity_count: prev.recent_activity_count + 1 }));
+            if (payload.data.latitude && payload.data.longitude) {
+              setGeoData(prev => ({
+                ...prev,
+                vectors: [{
+                  id: payload.data.id,
+                  source_lat: payload.data.latitude,
+                  source_lon: payload.data.longitude,
+                  is_flagged: payload.data.is_flagged,
+                  country_code: payload.data.country_code,
+                  source_ip: payload.data.ip_address
+                }, ...(prev.vectors || []).slice(0, 39)]
+              }));
+            }
+          } else if (payload.event === "NEW_ALERT") {
+            setAlerts(prev => [payload.data, ...prev]);
+            setStats(prev => ({ ...prev, flagged_logs: prev.flagged_logs + 1 }));
+          } else if (payload.event === "SOAR_AUTO_BAN" || payload.event === "IP_BANNED") {
+            fetchData();
+          }
+        } catch (_) {}
+      };
+    } catch (_) {}
+
+    const interval = setInterval(fetchData, 8000); // Polling de secours plus espacé grâce au WebSocket
+    return () => {
+      clearInterval(interval);
+      if (socket) socket.close();
+    };
   }, []);
 
   const handleBanIp = async (alertId) => {
@@ -113,8 +162,8 @@ export default function App() {
 
         <div class="flex items-center space-x-5">
           <div class="flex items-center space-x-2 bg-slate-900 border border-slate-800 rounded-full px-3.5 py-1 text-xs">
-            <span class="w-2.5 h-2.5 rounded-full bg-emerald-400 animate-ping"></span>
-            <span class="text-slate-300 font-medium">Monitoring Actif</span>
+            <span class={`w-2.5 h-2.5 rounded-full ${wsConnected ? 'bg-emerald-400 animate-ping' : 'bg-amber-400'}`}></span>
+            <span class="text-slate-300 font-medium">{wsConnected ? 'WebSocket Live (<50ms)' : 'Polling Secours'}</span>
             <span class="text-slate-600">|</span>
             <span class="text-cyan-400 font-mono text-[11px]">{lastSync}</span>
           </div>
@@ -127,6 +176,9 @@ export default function App() {
 
       {/* MAIN CONTAINER */}
       <main class="p-6 max-w-[1700px] mx-auto space-y-6">
+
+        {/* CARTE MONDIALE DES VECTEURS D'ATTAQUE (GEOIP) */}
+        <AttackMap vectors={geoData.vectors} target={geoData.target} />
 
         {/* TOP METRIC CARDS */}
         <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-5">

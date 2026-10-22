@@ -9,6 +9,8 @@ from app.models.alert import Alert, BlacklistedIP
 from app.models.user import User
 from app.schemas.alert import AlertOut, AlertUpdate, BlacklistCreate, BlacklistOut
 from app.api.deps import get_current_user, require_role
+from app.core.websocket import ws_manager
+import asyncio
 
 router = APIRouter(tags=["Alerts & Remediation"])
 
@@ -94,6 +96,20 @@ def ban_ip_from_alert(
     alert.status = "RESOLVED"
     db.commit()
     db.refresh(db_black)
+
+    # Diffusion WebSocket
+    try:
+        loop = asyncio.get_event_loop()
+        if loop.is_running():
+            asyncio.create_task(ws_manager.broadcast("ALERT_RESOLVED", {"id": alert.id, "status": "RESOLVED"}))
+            asyncio.create_task(ws_manager.broadcast("IP_BANNED", {
+                "ip_address": db_black.ip_address,
+                "reason": db_black.reason,
+                "blocked_at": db_black.blocked_at.isoformat()
+            }))
+    except Exception:
+        pass
+
     return db_black
 
 @router.get("/blacklist", response_model=List[BlacklistOut])
