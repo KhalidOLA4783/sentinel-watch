@@ -92,10 +92,27 @@ class ApiService {
     authToken = null;
   }
 
+  /// Génère les en-têtes HTTP avec le jeton d'authentification Bearer
+  Map<String, String> _authHeaders({Map<String, String>? extraHeaders}) {
+    final headers = <String, String>{
+      'Content-Type': 'application/json',
+    };
+    if (authToken != null && authToken!.isNotEmpty) {
+      headers['Authorization'] = 'Bearer $authToken';
+    }
+    if (extraHeaders != null) {
+      headers.addAll(extraHeaders);
+    }
+    return headers;
+  }
+
   /// Récupère les métadonnées globales de sécurité
   Future<SystemStats> fetchStats() async {
     try {
-      final response = await http.get(Uri.parse('$baseUrl/logs/stats')).timeout(
+      final response = await http.get(
+        Uri.parse('$baseUrl/logs/stats'),
+        headers: _authHeaders(),
+      ).timeout(
         const Duration(seconds: 4),
       );
       if (response.statusCode == 200) {
@@ -113,7 +130,10 @@ class ApiService {
       if (status != null && status.isNotEmpty) {
         url += '&status=$status';
       }
-      final response = await http.get(Uri.parse(url)).timeout(
+      final response = await http.get(
+        Uri.parse(url),
+        headers: _authHeaders(),
+      ).timeout(
         const Duration(seconds: 4),
       );
       if (response.statusCode == 200) {
@@ -129,6 +149,7 @@ class ApiService {
     try {
       final response = await http.post(
         Uri.parse('$baseUrl/alerts/$alertId/ban'),
+        headers: _authHeaders(),
       ).timeout(const Duration(seconds: 5));
       return response.statusCode == 200;
     } catch (_) {
@@ -141,7 +162,7 @@ class ApiService {
     try {
       final response = await http.patch(
         Uri.parse('$baseUrl/alerts/$alertId'),
-        headers: {'Content-Type': 'application/json'},
+        headers: _authHeaders(),
         body: jsonEncode({'status': status}),
       ).timeout(const Duration(seconds: 5));
       return response.statusCode == 200;
@@ -153,7 +174,10 @@ class ApiService {
   /// Récupère la liste noire active
   Future<List<Map<String, dynamic>>> fetchBlacklist() async {
     try {
-      final response = await http.get(Uri.parse('$baseUrl/blacklist')).timeout(
+      final response = await http.get(
+        Uri.parse('$baseUrl/blacklist'),
+        headers: _authHeaders(),
+      ).timeout(
         const Duration(seconds: 4),
       );
       if (response.statusCode == 200) {
@@ -169,6 +193,7 @@ class ApiService {
     try {
       final response = await http.delete(
         Uri.parse('$baseUrl/blacklist/$ipAddress'),
+        headers: _authHeaders(),
       ).timeout(const Duration(seconds: 4));
       return response.statusCode == 200;
     } catch (_) {

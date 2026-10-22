@@ -7,7 +7,9 @@ from sqlalchemy import desc
 from app.database import get_db
 from app.models.audit import AuditReport
 from app.models.alert import Alert
+from app.models.user import User
 from app.schemas.audit import AuditReportIn, AuditReportOut
+from app.api.deps import get_current_user
 
 router = APIRouter(prefix="/audits", tags=["Enterprise Audit & Posture"])
 
@@ -62,11 +64,12 @@ def receive_audit_report(report_in: AuditReportIn, db: Session = Depends(get_db)
 @router.get("", response_model=List[AuditReportOut])
 def get_audit_reports(
     db: Session = Depends(get_db),
+    current_user: User = Depends(get_current_user),
     limit: int = Query(50, ge=1, le=100),
     hostname: Optional[str] = None,
     risk_level: Optional[str] = None
 ):
-    """Récupère l'historique des audits de machines d'entreprise."""
+    """Récupère l'historique des audits de machines d'entreprise (Réservé utilisateurs authentifiés)."""
     query = db.query(AuditReport)
     if hostname:
         query = query.filter(AuditReport.hostname.ilike(f"%{hostname}%"))
@@ -76,7 +79,11 @@ def get_audit_reports(
     return query.order_by(desc(AuditReport.timestamp)).limit(limit).all()
 
 @router.get("/{report_id}", response_model=AuditReportOut)
-def get_audit_detail(report_id: int, db: Session = Depends(get_db)):
+def get_audit_detail(
+    report_id: int,
+    db: Session = Depends(get_db),
+    current_user: User = Depends(get_current_user)
+):
     """Récupère le détail complet d'un audit de machine avec ses solutions recommandées."""
     report = db.query(AuditReport).filter(AuditReport.id == report_id).first()
     if not report:

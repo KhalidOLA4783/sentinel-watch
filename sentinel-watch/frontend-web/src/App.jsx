@@ -9,6 +9,15 @@ import LogsTable from './components/LogsTable';
 
 const API_BASE = '/api/v1';
 
+const getAuthHeaders = () => {
+  const token = localStorage.getItem('sw_auth_token');
+  const headers = { 'Content-Type': 'application/json' };
+  if (token) {
+    headers['Authorization'] = `Bearer ${token}`;
+  }
+  return headers;
+};
+
 export default function App() {
   const [stats, setStats] = useState({ total_logs: 0, total_failed_logins: 0, unique_ips: 0, flagged_logs: 0, recent_activity_count: 0 });
   const [alerts, setAlerts] = useState([]);
@@ -19,11 +28,12 @@ export default function App() {
   const fetchData = async () => {
     try {
       setLastSync(new Date().toLocaleTimeString());
+      const headers = getAuthHeaders();
       const [resStats, resAlerts, resLogs, resBlacklist] = await Promise.all([
-        fetch(`${API_BASE}/logs/stats`),
-        fetch(`${API_BASE}/alerts?limit=30`),
-        fetch(`${API_BASE}/logs?limit=20`),
-        fetch(`${API_BASE}/blacklist`)
+        fetch(`${API_BASE}/logs/stats`, { headers }),
+        fetch(`${API_BASE}/alerts?limit=30`, { headers }),
+        fetch(`${API_BASE}/logs?limit=20`, { headers }),
+        fetch(`${API_BASE}/blacklist`, { headers })
       ]);
 
       if (resStats.ok) setStats(await resStats.json());
@@ -44,7 +54,10 @@ export default function App() {
   const handleBanIp = async (alertId) => {
     if (!window.confirm(`Bannir l'IP source de l'alerte #${alertId} ?`)) return;
     try {
-      const res = await fetch(`${API_BASE}/alerts/${alertId}/ban`, { method: 'POST' });
+      const res = await fetch(`${API_BASE}/alerts/${alertId}/ban`, { 
+        method: 'POST',
+        headers: getAuthHeaders()
+      });
       if (res.ok) fetchData();
     } catch (e) {
       console.error(e);
@@ -55,7 +68,7 @@ export default function App() {
     try {
       const res = await fetch(`${API_BASE}/alerts/${alertId}`, {
         method: 'PATCH',
-        headers: { 'Content-Type': 'application/json' },
+        headers: getAuthHeaders(),
         body: JSON.stringify({ status: 'RESOLVED' })
       });
       if (res.ok) fetchData();
@@ -67,7 +80,10 @@ export default function App() {
   const handleUnbanIp = async (ipAddress) => {
     if (!window.confirm(`Débloquer l'IP ${ipAddress} ?`)) return;
     try {
-      const res = await fetch(`${API_BASE}/blacklist/${ipAddress}`, { method: 'DELETE' });
+      const res = await fetch(`${API_BASE}/blacklist/${ipAddress}`, { 
+        method: 'DELETE',
+        headers: getAuthHeaders()
+      });
       if (res.ok) fetchData();
     } catch (e) {
       console.error(e);

@@ -49,4 +49,8 @@ Desktop.ini
 .idea/
 *.sublime-project
 *.sublime-workspace
+
+# Local Agent / Tools (à la racine)
+/agent/
+*.sublime-workspace
 .gemini/

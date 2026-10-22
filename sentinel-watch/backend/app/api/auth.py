@@ -1,4 +1,3 @@
-import hashlib
 import secrets
 from typing import Optional
 from fastapi import APIRouter, Depends, HTTPException, status
@@ -7,18 +6,14 @@ from sqlalchemy.orm import Session
 from app.database import get_db, SessionLocal
 from app.models.user import User
 from app.schemas.user import UserRegister, UserLogin, UserOut, AuthResponse
+from app.api.deps import (
+    hash_password,
+    verify_password,
+    create_access_token,
+    get_current_user
+)
 
 router = APIRouter(prefix="/auth", tags=["Authentication & Users"])
-
-SALT = b"sentinelwatch_secure_salt_2026"
-
-def hash_password(password: str) -> str:
-    """Hachage sécurisé du mot de passe avec PBKDF2-HMAC-SHA256 (bibliothèque standard)."""
-    return hashlib.pbkdf2_hmac("sha256", password.encode("utf-8"), SALT, 100000).hex()
-
-def verify_password(plain_password: str, hashed_password: str) -> bool:
-    """Vérification en temps constant."""
-    return secrets.compare_digest(hash_password(plain_password), hashed_password)
 
 def seed_default_admin():
     """Crée l'administrateur par défaut si aucun compte n'existe encore."""
@@ -66,8 +61,8 @@ def register(user_in: UserRegister, db: Session = Depends(get_db)):
     db.commit()
     db.refresh(new_user)
 
-    token = f"sw_token_{new_user.id}_{secrets.token_hex(16)}"
-    return AuthResponse(token=token, user=UserOut.model_validate(new_user))
+    token = create_access_token({"sub": str(new_user.id), "role": new_user.role})
+    return AuthResponse(token=token, token_type="bearer", user=UserOut.model_validate(new_user))
 
 @router.post("/login", response_model=AuthResponse)
 def login(creds: UserLogin, db: Session = Depends(get_db)):
@@ -83,13 +78,10 @@ def login(creds: UserLogin, db: Session = Depends(get_db)):
             detail="Identifiants incorrects (nom d'utilisateur ou mot de passe invalide)."
         )
 
-    token = f"sw_token_{user.id}_{secrets.token_hex(16)}"
-    return AuthResponse(token=token, user=UserOut.model_validate(user))
+    token = create_access_token({"sub": str(user.id), "role": user.role})
+    return AuthResponse(token=token, token_type="bearer", user=UserOut.model_validate(user))
 
 @router.get("/me", response_model=UserOut)
-def get_current_user_info(db: Session = Depends(get_db)):
-    """Retourne les informations du profil administrateur par défaut."""
-    user = db.query(User).first()
-    if not user:
-        raise HTTPException(status_code=404, detail="Aucun utilisateur configuré.")
-    return user
+def get_current_user_info(current_user: User = Depends(get_current_user)):
+    """Retourne les informations du profil connecté et authentifié."""
+    return current_user

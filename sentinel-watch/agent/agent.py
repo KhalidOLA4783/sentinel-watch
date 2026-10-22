@@ -15,9 +15,13 @@ from datetime import datetime
 
 API_URL = os.getenv("SENTINEL_API_URL", "http://127.0.0.1:8000/api/v1/audits")
 
-def run_cmd(cmd):
+def run_cmd(args: list[str]) -> str:
+    """
+    Exécution sécurisée de sous-processus sans shell intermédiaire (A03:2021).
+    Bannit shell=True pour prévenir toute injection de commande OS.
+    """
     try:
-        res = subprocess.run(cmd, shell=True, capture_output=True, text=True, timeout=5)
+        res = subprocess.run(args, shell=False, capture_output=True, text=True, timeout=5)
         return res.stdout.strip()
     except Exception:
         return ""
@@ -43,7 +47,7 @@ def audit_system():
 
     # 1. Vérification Firewall sous Linux (UFW ou iptables)
     if platform.system() == "Linux":
-        ufw_status = run_cmd("ufw status")
+        ufw_status = run_cmd(["ufw", "status"])
         if "inactive" in ufw_status or not ufw_status:
             score -= 25
             firewall_enabled = False
@@ -57,9 +61,21 @@ def audit_system():
                 "remediation_command": "sudo ufw default deny incoming && sudo ufw allow 22/tcp && sudo ufw enable"
             })
 
-        # 2. Vérification Root Login SSH
-        sshd_config = run_cmd("grep -E '^PermitRootLogin' /etc/ssh/sshd_config")
-        if "yes" in sshd_config.lower():
+        # 2. Vérification Root Login SSH (lecture de fichier directe sans sous-shell)
+        sshd_config_path = "/etc/ssh/sshd_config"
+        permit_root_login = False
+        if os.path.isfile(sshd_config_path):
+            try:
+                with open(sshd_config_path, "r", encoding="utf-8", errors="ignore") as f:
+                    for line in f:
+                        line_stripped = line.strip()
+                        if line_stripped.startswith("PermitRootLogin") and "yes" in line_stripped.lower():
+                            permit_root_login = True
+                            break
+            except Exception:
+                pass
+
+        if permit_root_login:
             score -= 20
             findings.append({
                 "title": "Connexion SSH Root Directe Autorisée",
